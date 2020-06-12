@@ -2,6 +2,10 @@ import requests
 import json
 import os
 
+SPRINGER_NATURE_FIELDS = ['title', 'creators', 'publicationNAME', 'issn',
+    'eissn', 'doi', 'publisher', 'publicationDate', 'startingPage', 'endPage',
+    'abstract']
+
 def springerUrlBuilder(s, subject, keyword, api):
     # builds query
     query = 'type:Journal'
@@ -24,7 +28,7 @@ def springerScraper(subject, keyword, api):
             data = json.loads(response.content)
             for record in data['records']:
                 print('title:', record['title'])
-                print('abstract:', record['abstract'])
+                # print('abstract:', record['abstract'])
 
             # updates total to total number of papers in query
             if i == 1:
