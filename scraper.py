@@ -41,13 +41,17 @@ def springer_scraper(subject = '', keyword = ''):
         response = requests.get(url)
         if response.ok:
             data = json.loads(response.content)
-            for record in data['records']:
-                print('title:', record['title'])
-                # print('abstract:', record['abstract'])
 
             # updates total to total number of papers in query
             if i == 1:
                 total = int(data['result'][0]['total'])
+
+            # gets metadata
+            for j, record in enumerate(data['records']):
+                print(f'Getting metadata of paper {i + j}/{total}...')
+                print('title:', record['title'])
+                # print('abstract:', record['abstract'])
+
         i += 100
 
 def elsevier_get_dois(url):
@@ -97,16 +101,16 @@ def elsevier_scraper(query):
     # gets metadata for ScienceDirect articles
     print(f'Getting metadata from ScienceDirect papers:')
     for i, doi in enumerate(sd_dois):
-        print(f'\tGetting metadata of paper {i + 1}/{len(sd_dois)}...')
+        print(f'\Getting metadata of paper {i + 1}/{len(sd_dois)}...')
         url = f'https://api.elsevier.com/content/article/doi/{doi}?apiKey={ELSEVIER_API_KEY}&httpAccept=application%2Fjson'
         response = requests.get(url)
         if response.ok:
             data = json.loads(response.content)['full-text-retrieval-response']['coredata']
-            print(data['dc:title'])
+            print('title:', data['dc:title'])
             # print(data['dc:description'])
 
 def main():
-    # springer_scraper(subject='Food Science', keyword='flavor compounds')
+    springer_scraper(subject='Food Science', keyword='flavor compounds')
     elsevier_scraper('flavor compounds')
 
 if __name__ == '__main__':
