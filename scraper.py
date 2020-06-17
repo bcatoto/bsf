@@ -5,16 +5,18 @@ from pymongo import MongoClient
 import re
 import datetime
 import os
+from dotenv import load_dotenv # to find .env file
+load_dotenv()
 
-SPRINGER_NATURE_API_KEY = os.environ.get('SPRINGER_NATURE_API_KEY')
-ELSEVIER_API_KEY = os.environ.get('ELSEVIER_API_KEY')
+SPRINGER_NATURE_API_KEY = os.environ.get('SPRINGER_NATURE_API_KEY', 'Springer key doesn\'t exist')
+ELSEVIER_API_KEY = os.environ.get('ELSEVIER_API_KEY', 'Elsevier key doesn\'t exist')
 SCIENCE_DIRECT_FIELDS = ['dc:title', 'dc:creator', 'prism:publicationName',
     'prism:issn', 'prism:doi', 'prism:publisher', 'prism:coverDate',
     'prism:pageRange', 'prism:endingPage', 'dc:description']
 PUBMED_FIELDS = ['articletitle', 'author', 'title', 'issn', 'elocationid',
     'pubdate', 'abstracttext']
 
-DATABASE_URL = os.environ.get('DATABASE_URL')
+DATABASE_URL = os.environ.get('DATABASE_URL', 'Database url doesn\'t exist') # TODO: create a shared database for bsf
 
 CLIENT = MongoClient(DATABASE_URL)
 DB = CLIENT.papers
@@ -119,6 +121,14 @@ def springer_scraper(subject = '', keyword = ''):
 
         i += 100
 
+def sd_get_date(date): # could potentially combine this with springer_get_date() since code is identical
+    """
+    Converts date into datetime object
+    :param date: date formatted 'YYYY-MM-DD'
+    """
+    date_array = date.split('-')
+    return datetime.datetime(int(date_array[0]), int(date_array[1]), int(date_array[2]))
+
 def elsevier_get_dois(url):
     """
     Scrapes dois of all results from url
@@ -147,6 +157,13 @@ def elsevier_get_dois(url):
         page += 1
     return dois
 
+def elsevier_get_ending_page(query, info):
+    try:
+        ending_page = info[query]
+        return int(ending_page)
+    except KeyError:
+        return ''
+
 def elsevier_scraper(query):
     """
     Scrapes metadata of Elsevier (Scopus and ScienceDirect) articles returned
@@ -167,7 +184,7 @@ def elsevier_scraper(query):
 
     # gets metadata for ScienceDirect articles
     print(f'Getting metadata of ScienceDirect papers:')
-    for i, doi in enumerate(sd_dois):
+    for i, doi in enumerate(sd_dois): 
         print(f'\tGetting metadata of paper {i + 1}/{len(sd_dois)}...')
 
         url = f'https://api.elsevier.com/content/article/doi/{doi}?apiKey={ELSEVIER_API_KEY}&httpAccept=application%2Fjson'
@@ -176,6 +193,26 @@ def elsevier_scraper(query):
             data = json.loads(response.content)['full-text-retrieval-response']['coredata']
             print('\ttitle:', data['dc:title'])
             # print(data['dc:description'])
+
+            # checks if paper is already in database using doi
+            if COLL.count_documents({ 'doi': doi }, limit = 1):
+                print(f'\tThis paper is already stored: {doi}')
+            else:
+                # stores paper and metadata in database
+                paper = {
+                        'doi': doi,
+                        'title': data['dc:title'],
+                        'abstract': data['dc:description'],
+                        # add url?
+                        # 'creators': data['dc:creator'], # need helper method to get all creators?
+                        'publication_name': data['prism:publicationName'],
+                        'issn': data['prism:issn'],
+                        'publication_date': sd_get_date(data['prism:coverDate']),
+                        'start-page': int(data['prism:startingPage']),
+                        'end-page': elsevier_get_ending_page('prism:endingPage', data),
+                        'database': 'ScienceDirect'
+                    }
+                # COLL.insert_one(paper)
 
 def pubmed_remove_html(element):
     """
@@ -283,10 +320,9 @@ def pubmed_scraper(term):
         i += 200
 
 def main():
-    springer_scraper(subject='Food Science', keyword='flavor compounds')
-    # elsevier_scraper('flavor compounds')
-    pubmed_scraper('flavor compounds')
-
+    # springer_scraper(subject='Food Science', keyword='flavor compounds')
+    elsevier_scraper('flavor compounds')
+    # pubmed_scraper('flavor compounds')
 
 if __name__ == '__main__':
     main()
