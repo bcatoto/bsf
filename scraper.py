@@ -121,14 +121,6 @@ def springer_scraper(subject = '', keyword = ''):
 
         i += 100
 
-def sd_get_date(date): # could potentially combine this with springer_get_date() since code is identical
-    """
-    Converts date into datetime object
-    :param date: date formatted 'YYYY-MM-DD'
-    """
-    date_array = date.split('-')
-    return datetime.datetime(int(date_array[0]), int(date_array[1]), int(date_array[2]))
-
 def elsevier_get_dois(url):
     """
     Scrapes dois of all results from url
@@ -157,10 +149,34 @@ def elsevier_get_dois(url):
         page += 1
     return dois
 
-def elsevier_get_ending_page(query, info):
+def sd_get_date(date): # could potentially combine this with springer_get_date() since code is identical
+    """
+    Converts date into datetime object
+    :param date: date formatted 'YYYY-MM-DD'
+    """
+    date_array = date.split('-')
+    return datetime.datetime(int(date_array[0]), int(date_array[1]), int(date_array[2]))
+
+def sd_get_creators(creators):
+    """
+    Turns list of dictionary of creators into list of creators and ignores extraneous data
+    :param creators: list of creators where each creator is inside a dictionary
+    """
+    list = []
+    for entry in creators:
+        list.append(entry['$'])
+    return list
+
+def sd_get_page(query, info):
+    """
+    Some articles have starting-page/ending-page and others don't, so attempts to return page if present
+    If the field does not exist, returns a blank string
+    :param query: index within the json file where ending page is located (if it exists)
+    :param info: json file
+    """
     try:
-        ending_page = info[query]
-        return int(ending_page)
+        page = info[query]
+        return int(page)
     except KeyError:
         return ''
 
@@ -185,14 +201,13 @@ def elsevier_scraper(query):
     # gets metadata for ScienceDirect articles
     print(f'Getting metadata of ScienceDirect papers:')
     for i, doi in enumerate(sd_dois): 
-        print(f'\tGetting metadata of paper {i + 1}/{len(sd_dois)}...')
+        print(f'\tGetting and storing metadata of paper {i + 1}/{len(sd_dois)}...')
 
         url = f'https://api.elsevier.com/content/article/doi/{doi}?apiKey={ELSEVIER_API_KEY}&httpAccept=application%2Fjson'
         response = requests.get(url)
         if response.ok:
             data = json.loads(response.content)['full-text-retrieval-response']['coredata']
             print('\ttitle:', data['dc:title'])
-            # print(data['dc:description'])
 
             # checks if paper is already in database using doi
             if COLL.count_documents({ 'doi': doi }, limit = 1):
@@ -204,15 +219,15 @@ def elsevier_scraper(query):
                         'title': data['dc:title'],
                         'abstract': data['dc:description'],
                         # add url?
-                        # 'creators': data['dc:creator'], # need helper method to get all creators?
+                        'creators': sd_get_creators(data['dc:creator']), 
                         'publication_name': data['prism:publicationName'],
                         'issn': data['prism:issn'],
                         'publication_date': sd_get_date(data['prism:coverDate']),
-                        'start-page': int(data['prism:startingPage']),
-                        'end-page': elsevier_get_ending_page('prism:endingPage', data),
+                        'start-page': sd_get_page('prism:startingPage', data),
+                        'end-page': sd_get_page('prism:endingPage', data),
                         'database': 'ScienceDirect'
                     }
-                # COLL.insert_one(paper)
+                COLL.insert_one(paper)
 
 def pubmed_remove_html(element):
     """
@@ -296,7 +311,7 @@ def pubmed_scraper(term):
 
             # stores UIDs returned by query
             for j, article in enumerate(soup.find_all('pubmedarticle')):
-                print(f'\tGetting metadata of papers {i + j + 1}/{total}...')
+                print(f'\tGetting and storing metadata of papers {i + j + 1}/{total}...')
 
                 # checks if paper is already in database using doi
                 doi = str(article.find('elocationid', eidtype='doi').string)
