@@ -8,6 +8,13 @@ verify_ssl = true
 [packages]
 requests = "*"
 beautifulsoup4 = "*"
+pymongo = "*"
+dnspython = "*"
+snappy = "*"
+gssapi = "*"
+srv = "*"
+ipaddress = "*"
+certifi = "*"
 
 [requires]
 python_version = "3.7"
