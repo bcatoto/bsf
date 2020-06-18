@@ -15,6 +15,11 @@ gssapi = "*"
 srv = "*"
 ipaddress = "*"
 certifi = "*"
+chemdataextractor = "*"
+unidecode = "*"
+pymatgen = "*"
+gensim = "*"
+monty = "*"
 
 [requires]
 python_version = "3.7"
