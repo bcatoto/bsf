@@ -117,10 +117,10 @@ def springer_scraper(subject = '', keyword = ''):
                         'issn': record['issn'],
                         'eissn': record['eIssn'],
                         'publication_date': springer_get_date(record['publicationDate']),
-                        'start-page': int(record['startingPage']),
-                        'end-page': int(record['endingPage']),
+                        'start_page': int(record['startingPage']),
+                        'end_page': int(record['endingPage']),
                         'database': 'springer',
-                        'processed-abstract': ' '.join(tokens)
+                        'processed_abstract': ' '.join(tokens)
                     }
                     COLL.insert_one(paper)
 
@@ -212,13 +212,16 @@ def elsevier_scraper(query):
         response = requests.get(url)
         if response.ok:
             data = json.loads(response.content)['full-text-retrieval-response']['coredata']
-            print('\ttitle:', data['dc:title'])
+            # print('\ttitle:', data['dc:title'])
 
             # checks if paper is already in database using doi
             if COLL.count_documents({ 'doi': doi }, limit = 1):
                 print(f'\tThis paper is already stored: {doi}')
             else:
-                print(data['prism:url'])
+                # processes abstract text using processor from mat2vec
+                tokens, materials = PROCESSOR.process(data['dc:description'])
+                
+                # stores paper and metadata in database
                 paper = {
                         'doi': doi,
                         'title': data['dc:title'],
@@ -228,9 +231,10 @@ def elsevier_scraper(query):
                         'publication_name': data['prism:publicationName'],
                         'issn': data['prism:issn'],
                         'publication_date': sd_get_date(data['prism:coverDate']),
-                        'start-page': sd_get_page('prism:startingPage', data),
-                        'end-page': sd_get_page('prism:endingPage', data),
-                        'database': 'ScienceDirect'
+                        'start_page': sd_get_page('prism:startingPage', data),
+                        'end_page': sd_get_page('prism:endingPage', data),
+                        'database': 'ScienceDirect',
+                        'processed_abstract': ' '.join(tokens)
                     }
                 COLL.insert_one(paper)
 
@@ -243,7 +247,7 @@ def pubmed_remove_html(element):
         return None
     string = ''
     for content in element.contents:
-        string += re.sub('\s*\<[^)]*\>', '', str(content))
+        string += re.sub('\s*\<[^)]*\>', '', str(content)) # @bianca should there be an r before the string? TODO: resolve the warning
     return string
 
 def pubmed_get_authors(authors):
@@ -323,26 +327,36 @@ def pubmed_scraper(term):
                 if COLL.count_documents({ 'doi': doi }, limit = 1):
                     print(f'\tThis paper is already stored: {doi}')
                 else:
+                    # processes abstract text using processor from mat2vec
+                    abstract = pubmed_remove_html(article.abstracttext)
+                    
+                    # occasionally papers had no abstract, so skip over those
+                    if abstract == None: 
+                        print(f'\tThis paper: {doi} has an empty abstract. Skipping...')
+                        continue
+                    tokens, materials = PROCESSOR.process(abstract)
+
                     # stores paper and metadata in database
                     paper = {
                         'doi': doi,
                         'title': pubmed_remove_html(article.articletitle),
-                        'abstract': pubmed_remove_html(article.abstracttext),
+                        'abstract': abstract, # see above
                         'creators': pubmed_get_authors(article.find_all('author')),
                         'publication_name': pubmed_remove_html(article.journal.title),
                         'issn': pubmed_get_string(article.find('issn', issntype='Print')),
                         'eissn': pubmed_get_string(article.find('issn', issntype='Electronic')),
                         'publication_date': pubmed_get_date(article.articledate),
-                        'database': 'pubmed'
+                        'database': 'pubmed',
+                        'processed_abstract': ' '.join(tokens)
                     }
                     COLL.insert_one(paper)
 
         i += 200
 
 def main():
-    springer_scraper(subject='Food Science', keyword='flavor compounds')
+    # springer_scraper(subject='Food Science', keyword='flavor compounds')
     # elsevier_scraper('flavor compounds')
-    # pubmed_scraper('flavor compounds')
+    pubmed_scraper('flavor compounds')
 
 if __name__ == '__main__':
     main()
