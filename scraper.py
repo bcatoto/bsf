@@ -14,7 +14,7 @@ SCIENCE_DIRECT_FIELDS = ['dc:title', 'dc:creator', 'prism:publicationName',
 PUBMED_FIELDS = ['articletitle', 'author', 'title', 'issn', 'elocationid',
     'pubdate', 'abstracttext']
 
-DATABASE_URL = os.environ.get('DATABASE_URL', 'Database url doesn\'t exist') # TODO: create a shared database for bsf
+DATABASE_URL = os.environ.get('DATABASE_URL', 'Database url doesn\'t exist')
 
 CLIENT = MongoClient(DATABASE_URL)
 DB = CLIENT.papers
@@ -211,12 +211,12 @@ def elsevier_scraper(query):
             if COLL.count_documents({ 'doi': doi }, limit = 1):
                 print(f'\tThis paper is already stored: {doi}')
             else:
-                # stores paper and metadata in database
+                print(data['prism:url'])
                 paper = {
                         'doi': doi,
                         'title': data['dc:title'],
                         'abstract': data['dc:description'],
-                        # add url?
+                        'url': data['prism:url'],
                         'creators': sd_get_creators(data['dc:creator']),
                         'publication_name': data['prism:publicationName'],
                         'issn': data['prism:issn'],
