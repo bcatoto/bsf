@@ -1,6 +1,7 @@
 import requests
 import json
 from bs4 import BeautifulSoup
+from process import MaterialsTextProcessor
 from pymongo import MongoClient
 import re
 import datetime
@@ -13,6 +14,8 @@ SCIENCE_DIRECT_FIELDS = ['dc:title', 'dc:creator', 'prism:publicationName',
     'prism:pageRange', 'prism:endingPage', 'dc:description']
 PUBMED_FIELDS = ['articletitle', 'author', 'title', 'issn', 'elocationid',
     'pubdate', 'abstracttext']
+
+PROCESSOR = MaterialsTextProcessor()
 
 DATABASE_URL = os.environ.get('DATABASE_URL', 'Database url doesn\'t exist')
 
@@ -100,6 +103,9 @@ def springer_scraper(subject = '', keyword = ''):
                 if COLL.count_documents({ 'doi': doi }, limit = 1):
                     print(f'\tThis paper is already stored: {doi}')
                 else:
+                    # processes abstract text using processor from mat2vec
+                    tokens, materials = PROCESSOR.process(record['abstract'])
+
                     # stores paper and metadata in database
                     paper = {
                         'doi': doi,
@@ -113,7 +119,8 @@ def springer_scraper(subject = '', keyword = ''):
                         'publication_date': springer_get_date(record['publicationDate']),
                         'start-page': int(record['startingPage']),
                         'end-page': int(record['endingPage']),
-                        'database': 'springer'
+                        'database': 'springer',
+                        'processed-abstract': ' '.join(tokens)
                     }
                     COLL.insert_one(paper)
 
@@ -333,8 +340,8 @@ def pubmed_scraper(term):
         i += 200
 
 def main():
-    # springer_scraper(subject='Food Science', keyword='flavor compounds')
-    elsevier_scraper('flavor compounds')
+    springer_scraper(subject='Food Science', keyword='flavor compounds')
+    # elsevier_scraper('flavor compounds')
     # pubmed_scraper('flavor compounds')
 
 if __name__ == '__main__':
