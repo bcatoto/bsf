@@ -5,8 +5,6 @@ from pymongo import MongoClient
 import re
 import datetime
 import os
-from dotenv import load_dotenv # to find .env file
-load_dotenv()
 
 SPRINGER_NATURE_API_KEY = os.environ.get('SPRINGER_NATURE_API_KEY', 'Springer key doesn\'t exist')
 ELSEVIER_API_KEY = os.environ.get('ELSEVIER_API_KEY', 'Elsevier key doesn\'t exist')
@@ -200,7 +198,7 @@ def elsevier_scraper(query):
 
     # gets metadata for ScienceDirect articles
     print(f'Getting metadata of ScienceDirect papers:')
-    for i, doi in enumerate(sd_dois): 
+    for i, doi in enumerate(sd_dois):
         print(f'\tGetting and storing metadata of paper {i + 1}/{len(sd_dois)}...')
 
         url = f'https://api.elsevier.com/content/article/doi/{doi}?apiKey={ELSEVIER_API_KEY}&httpAccept=application%2Fjson'
@@ -219,7 +217,7 @@ def elsevier_scraper(query):
                         'title': data['dc:title'],
                         'abstract': data['dc:description'],
                         # add url?
-                        'creators': sd_get_creators(data['dc:creator']), 
+                        'creators': sd_get_creators(data['dc:creator']),
                         'publication_name': data['prism:publicationName'],
                         'issn': data['prism:issn'],
                         'publication_date': sd_get_date(data['prism:coverDate']),

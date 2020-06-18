@@ -15,7 +15,6 @@ gssapi = "*"
 srv = "*"
 ipaddress = "*"
 certifi = "*"
-python-dotenv = "*"
 
 [requires]
 python_version = "3.7"
