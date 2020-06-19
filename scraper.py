@@ -203,6 +203,9 @@ def elsevier_scraper(query):
 
     # TODO: get metadata for Scopus articles (doesn't return abstract for some reason, contacted API support)
 
+    # TODO Step 1 - get dois from scopus
+    # TODO Step 2 - for each doi, return the abstract using abstract retrieval API
+
     # gets metadata for ScienceDirect articles
     print(f'Getting metadata of ScienceDirect papers:')
     for i, doi in enumerate(sd_dois):
