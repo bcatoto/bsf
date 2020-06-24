@@ -1,8 +1,8 @@
-import requests
-import json
+from pymongo import MongoClient
 from bs4 import BeautifulSoup
 from process import MaterialsTextProcessor
-from pymongo import MongoClient
+import requests
+import json
 import re
 import datetime
 import os
@@ -223,7 +223,7 @@ def elsevier_scraper(query):
             else:
                 # processes abstract text using processor from mat2vec
                 tokens, materials = PROCESSOR.process(data['dc:description'])
-                
+
                 # stores paper and metadata in database
                 paper = {
                         'doi': doi,
@@ -332,9 +332,9 @@ def pubmed_scraper(term):
                 else:
                     # processes abstract text using processor from mat2vec
                     abstract = pubmed_remove_html(article.abstracttext)
-                    
+
                     # occasionally papers had no abstract, so skip over those
-                    if abstract == None: 
+                    if abstract == None:
                         print(f'\tThis paper: {doi} has an empty abstract. Skipping...')
                         continue
                     tokens, materials = PROCESSOR.process(abstract)
