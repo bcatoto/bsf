@@ -1,4 +1,7 @@
-[
+{
+  "from": "matthew",
+  "type": "relevant",
+  "articles": [
     {
         "doi": "10.3126/jfstn.v6i0.8252",
         "title": "Bacillus Fermentation of Soybean: A Review",
@@ -600,3 +603,4 @@
         "relevant": false
     }
 ]
+}
