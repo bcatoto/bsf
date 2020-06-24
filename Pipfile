@@ -20,6 +20,7 @@ unidecode = "*"
 pymatgen = "*"
 gensim = "*"
 monty = "*"
+scikit-learn = "*"
 
 [requires]
 python_version = "3.7"
