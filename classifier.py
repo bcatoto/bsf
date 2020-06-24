@@ -1,6 +1,6 @@
 # https://medium.com/machine-learning-intuition/document-classification-part-2-text-processing-eaa26d16c719
 # https://stackabuse.com/overview-of-classification-methods-in-python-with-scikit-learn/
-# TODO Idea: for each abstract that we scrape, first check if it's relevant before adding it to MongoDB
+# TODO: for each abstract that we scrape, first check if it's relevant before adding it to MongoDB
 
 # import statements
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -12,8 +12,15 @@ import os
 DATABASE_URL = os.environ.get('DATABASE_URL', 'Database url doesn\'t exist')
 
 def main():
+    """
+    Trains binary classifier given set of clearly marked relevant and irrelevant articles (from MongoDB database)
+    Command-line argument should be name of collection, all lowercase (e.g. "thomas")
+    """
+
+    # validate command-line input
     if len(argv) < 2:
-        print('Collection not specified', file=stderr)
+        exit('Error: Collection not specified.')
+        # print('Collection not specified', file=stderr)
 
     # queries database
     db = MongoClient(DATABASE_URL).training
@@ -37,14 +44,14 @@ def main():
     # vectorize abstracts
     vectorizer = TfidfVectorizer()
     training_feat = vectorizer.fit_transform(training_abs)
-    testing_feat = vectorizer.fit_transform(testing_abs)
+    testing_feat = vectorizer.transform(testing_abs)
 
     # train model
     logreg_clf = LogisticRegression()
     logreg_clf.fit(training_feat, training_val)
 
     # scores model based on accuracy of testing set
-    # not sure about this part, getting weird errors
+    # based on the random factor from above, accuracy is ~35%. Hopefully this increases with actual data
     score = logreg_clf.score(testing_feat, testing_val)
     print(score)
 
