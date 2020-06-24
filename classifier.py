@@ -8,6 +8,7 @@ from sklearn.linear_model import LogisticRegression
 from pymongo import MongoClient
 from sys import argv, stderr
 import os
+import random # might remove later if there is a better alternative to shuffle
 
 DATABASE_URL = os.environ.get('DATABASE_URL', 'Database url doesn\'t exist')
 
@@ -32,14 +33,20 @@ def main():
     testing_abs = []
     testing_val = []
 
-    # put fake values
+    # we want to use 80% of the articles as training data and 20% for testing
+    # 1 is relevant and 0 is irrelevant
+    limit = int(0.8 * len(articles))
+    
+    # TODO: better option than shuffle? With original, accuracy was 55%. With shuffle, accuracy was consistently >85%
+    random.shuffle(articles) 
+
     for i, article in enumerate(articles):
-        if i < int(len(articles) / 5):
-            testing_abs.append(article['processed_abstract'])
-            testing_val.append(1 if (i % 2 == 0) else 0)
-        else:
+        if i < limit:
             training_abs.append(article['processed_abstract'])
-            training_val.append(1 if (i % 2 == 0) else 0)
+            training_val.append(1 if (article['relevant']) else 0)
+        else:
+            testing_abs.append(article['processed_abstract'])
+            testing_val.append(1 if (article['relevant']) else 0)
 
     # vectorize abstracts
     vectorizer = TfidfVectorizer()
@@ -51,7 +58,6 @@ def main():
     logreg_clf.fit(training_feat, training_val)
 
     # scores model based on accuracy of testing set
-    # based on the random factor from above, accuracy is ~35%. Hopefully this increases with actual data
     score = logreg_clf.score(testing_feat, testing_val)
     print(score)
 

@@ -10,3 +10,6 @@
 Now you can run `pipenv run python scraper.py` to test the scraper. The first two terms `pipenv run` ensure that your .env variables are accessible to the interpreter. 
 
 If you access issues with finding the location of your virtual environment, you can use `pipenv --py` to access its path and use it directly in code editors like VSCode and Atom. 
+
+### For collaborators
+If packages have been changed upstream, you can update your local environment with `pipenv sync`.
