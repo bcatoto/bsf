@@ -37,7 +37,12 @@ def load_articles():
         for j, article in enumerate(articles):
             print(f'\tStoring article {j + 1}/{len(articles)}...')
 
-            doi = article['doi']
+            # handle pmid for PubMed and doi for all other databases
+            try:
+                doi = article['doi']
+            except KeyError:
+                doi = article['pmid']
+
             if coll.count_documents({ 'doi': doi }, limit = 1):
                 print(f'\tThis paper is already stored: {doi}')
             else:
