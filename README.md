@@ -15,7 +15,8 @@ If you access issues with finding the location of your virtual environment, you 
 ## Using the Scripts
 You have two options: 
 
-**Option 1 (debugging):** edit **main_script.py** by commenting out functions and using `pipenv run python main_script.py` from the bsf directory
+**Option 1 (debugging):** edit **main_script.py** by commenting unnecessary lines and running `pipenv run python main_script.py` from the bsf directory
+
 **Option 2:** see below
 
 ### Loader

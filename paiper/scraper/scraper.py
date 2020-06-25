@@ -1,6 +1,7 @@
 from pymongo import MongoClient
 from bs4 import BeautifulSoup
 from paiper.processor import MaterialsTextProcessor
+from paiper.classifier import Classifier
 import requests
 import json
 import re
@@ -106,6 +107,9 @@ def springer_scraper(subject = '', keyword = ''):
                     # processes abstract text using processor from mat2vec
                     tokens, materials = PROCESSOR.process(record['abstract'])
 
+                    # TODO: apply binary classifier to determine if relevant or not
+                    processed_abstract = ' '.join(tokens)
+
                     # stores paper and metadata in database
                     paper = {
                         'doi': doi,
@@ -120,7 +124,7 @@ def springer_scraper(subject = '', keyword = ''):
                         'start_page': int(record['startingPage']),
                         'end_page': int(record['endingPage']),
                         'database': 'springer',
-                        'processed_abstract': ' '.join(tokens)
+                        'processed_abstract': processed_abstract
                     }
                     COLL.insert_one(paper)
 
@@ -203,9 +207,6 @@ def elsevier_scraper(query):
 
     # TODO: get metadata for Scopus articles (doesn't return abstract for some reason, contacted API support)
 
-    # TODO Step 1 - get dois from scopus
-    # TODO Step 2 - for each doi, return the abstract using abstract retrieval API
-
     # gets metadata for ScienceDirect articles
     print(f'Getting metadata of ScienceDirect papers:')
     for i, doi in enumerate(sd_dois):
@@ -224,6 +225,9 @@ def elsevier_scraper(query):
                 # processes abstract text using processor from mat2vec
                 tokens, materials = PROCESSOR.process(data['dc:description'])
 
+                # TODO: apply binary classifier to determine if relevant or not
+                processed_abstract = ' '.join(tokens)
+
                 # stores paper and metadata in database
                 paper = {
                         'doi': doi,
@@ -237,7 +241,7 @@ def elsevier_scraper(query):
                         'start_page': sd_get_page('prism:startingPage', data),
                         'end_page': sd_get_page('prism:endingPage', data),
                         'database': 'ScienceDirect',
-                        'processed_abstract': ' '.join(tokens)
+                        'processed_abstract': processed_abstract
                     }
                 COLL.insert_one(paper)
 
@@ -330,7 +334,7 @@ def pubmed_scraper(term):
                 if COLL.count_documents({ 'doi': doi }, limit = 1):
                     print(f'\tThis paper is already stored: {doi}')
                 else:
-                    # processes abstract text using processor from mat2vec
+                    # store abstract text for use by mat2vec below
                     abstract = pubmed_remove_html(article.abstracttext)
 
                     # occasionally papers had no abstract, so skip over those
@@ -338,6 +342,9 @@ def pubmed_scraper(term):
                         print(f'\tThis paper: {doi} has an empty abstract. Skipping...')
                         continue
                     tokens, materials = PROCESSOR.process(abstract)
+                    
+                    # TODO: apply binary classifier to determine if relevant or not
+                    processed_abstract = ' '.join(tokens)
 
                     # stores paper and metadata in database
                     paper = {
@@ -350,14 +357,15 @@ def pubmed_scraper(term):
                         'eissn': pubmed_get_string(article.find('issn', issntype='Electronic')),
                         'publication_date': pubmed_get_date(article.articledate),
                         'database': 'pubmed',
-                        'processed_abstract': ' '.join(tokens)
+                        'processed_abstract': processed_abstract
                     }
                     COLL.insert_one(paper)
 
         i += 200
 
 def main():
-    springer_scraper(subject='Food Science', keyword='flavor compounds')
+    
+    # springer_scraper(subject='Food Science', keyword='flavor compounds')
     # elsevier_scraper('flavor compounds')
     # pubmed_scraper('flavor compounds')
 
