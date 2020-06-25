@@ -1,6 +1,6 @@
 from pymongo import MongoClient
 from bs4 import BeautifulSoup
-from process import MaterialsTextProcessor
+from paiper.processor import MaterialsTextProcessor
 import requests
 import json
 import re
@@ -357,9 +357,9 @@ def pubmed_scraper(term):
         i += 200
 
 def main():
-    # springer_scraper(subject='Food Science', keyword='flavor compounds')
+    springer_scraper(subject='Food Science', keyword='flavor compounds')
     # elsevier_scraper('flavor compounds')
-    pubmed_scraper('flavor compounds')
+    # pubmed_scraper('flavor compounds')
 
 if __name__ == '__main__':
     main()

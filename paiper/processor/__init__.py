@@ -1,0 +1,1 @@
+from paiper.processor.process import MaterialsTextProcessor
