@@ -11,7 +11,7 @@ MODELS_PATH = os.path.join(os.path.dirname(__file__), 'models')
 
 class Classifier:
 
-    def train_model(name, training_size=0.8, doc2vec=False):
+    def train_model(name, training_size=0.8, save_pickle=True, doc2vec=False):
         """
         Trains Classifier based on set of relevant and irrelevant articles
         from MongoDB database)
@@ -56,8 +56,9 @@ class Classifier:
         print(f'{name} model accuracy: {score}')
 
         # pickles model and saves to models folder
-        with open(os.path.join(MODELS_PATH, f'{name}_{round(score * 100)}_model.pkl'), 'wb') as file:
-            pickle.dump(model, file)
+        if save_pickle:
+            with open(os.path.join(MODELS_PATH, f'{name}_{round(score * 100)}_model.pkl'), 'wb') as file:
+                pickle.dump(model, file)
 
         self._model = model
 
