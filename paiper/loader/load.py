@@ -9,13 +9,13 @@ import os
 DATABASE_URL = os.environ.get('DATABASE_URL', 'Database url doesn\'t exist')
 ARTICLE_PATH = os.path.join(os.path.dirname(__file__), 'articles')
 
-def load_data():
+def load_articles():
     """
     Loads all articles from all json files in articles folder into MongoDB
     database
     """
     processor = MaterialsTextProcessor()
-    db = MongoClient(DATABASE_URL).training
+    db = MongoClient(DATABASE_URL).classifier
 
     # gets all files in articles folder
     files = []
