@@ -7,13 +7,13 @@
 4. Run `pipenv install` to install all the required package (listed in Pipfile). Note: If there is a conflict because the virtual environment is running another version of Python other than 3.7, run `pipenv --python 3.7`. If you are using pipenv and any of the packages fail to install, install the packages separately with `pipenv install package_name`.
 5. Make a copy of `.env-example`, rename it `.env`, and change the value of the assorted keys (e.g. `SPRINGER_NATURE_API_KEY`) to your own API keys.
 
-Now you can run `pipenv run python` activate the Python interpreter. The first two terms `pipenv run` ensure that your environment variables are accessible to the interpreter. 
+Now you can run `pipenv run python` activate the Python interpreter. The first two terms `pipenv run` ensure that your environment variables are accessible to the interpreter.
 
 If you access issues with finding the location of your virtual environment, you can use `pipenv --py` to access its path and use it directly in code editors like VSCode and Atom.
 
 
 ## Using the Scripts
-You have two options: 
+You have two options:
 
 **Option 1 (debugging):** edit **main_script.py** by commenting unnecessary lines and running `pipenv run python main_script.py` from the bsf directory
 
@@ -52,3 +52,4 @@ Note that you must specify both a vectorizer and model, or else the predictions 
 
 ### For collaborators
 If packages have been changed upstream, you can update your local environment with `pipenv sync` and `pipenv clean`.
+test
