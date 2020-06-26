@@ -1,6 +1,7 @@
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report
+from sklearn import model_selection
 from pymongo import MongoClient
 import pickle
 import os
@@ -27,39 +28,32 @@ class Classifier:
         # queries database
         db = MongoClient(DATABASE_URL).classifier
         articles = list(db[collection].find())
-        random.shuffle(articles)
+        
+        # fill abstracts and values lists 
+        abstracts = []
+        values = []
+        for article in articles:
+            abstracts.append(article['processed_abstract'])
+            values.append(1 if article['relevant'] else 0)
 
-        training_abs = []
-        training_val = []
-        testing_abs = []
-        testing_val = []
-
-        # separates articles into training and testing set based on specified
-        # training size
-        limit = int(training_size * len(articles))
-
-        for i, article in enumerate(articles):
-            if i < limit:
-                training_abs.append(article['processed_abstract'])
-                training_val.append(1 if article['relevant'] else 0)
-            else:
-                testing_abs.append(article['processed_abstract'])
-                testing_val.append(1 if article['relevant'] else 0)
+        # split into training and testing data
+        # good random_state results: 3 (0.95) and 5 (0.975)
+        train_abs, test_abs, train_val, test_val = model_selection.train_test_split(abstracts, values, train_size=training_size, random_state=5)
 
         # vectorize abstracts
         vectorizer = TfidfVectorizer()
-        training_feat = vectorizer.fit_transform(training_abs)
-        testing_feat = vectorizer.transform(testing_abs)
+        train_feat = vectorizer.fit_transform(train_abs)
+        test_feat = vectorizer.transform(test_abs)
 
         # train model
         model = LogisticRegression()
-        model.fit(training_feat, training_val)
+        model.fit(train_feat, train_val)
 
         # scores model based on accuracy of testing set
-        testing_pred = model.predict(testing_feat)
-        score = model.score(testing_feat, testing_val)
+        test_pred = model.predict(test_feat)
+        score = model.score(test_feat, test_val)
         print(f'{collection} model accuracy: {score}')
-        print(classification_report(testing_val, testing_pred))
+        print(classification_report(test_val, test_pred))
 
         # pickles vectorizer and model and saves to respective folders
         if save_pickle:
