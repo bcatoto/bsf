@@ -31,7 +31,7 @@ def load_articles():
         data = json.load(file)
         articles = data['articles']
 
-        # connects to proper collectin
+        # connects to proper collection
         coll = db[data['from']]
 
         for j, article in enumerate(articles):

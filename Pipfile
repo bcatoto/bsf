@@ -17,6 +17,7 @@ pymatgen = "*"
 gensim = "*"
 monty = "*"
 scikit-learn = "*"
+progress = "*"
 
 [requires]
 python_version = "3.7"
