@@ -119,8 +119,6 @@ def springer_scraper(classifier, subject = '', keyword = ''):
                         'issn': record['issn'],
                         'eissn': record['eIssn'],
                         'publication_date': springer_get_date(record['publicationDate']),
-                        'start_page': int(record['startingPage']),
-                        'end_page': int(record['endingPage']),
                         'database': 'springer',
                         'processed_abstract': processed_abstract
                     }
@@ -176,19 +174,6 @@ def sd_get_creators(creators):
         list.append(entry['$'])
     return list
 
-def sd_get_page(query, info):
-    """
-    Some articles have starting-page/ending-page and others don't, so attempts to return page if present
-    If the field does not exist, returns a blank string
-    :param query: index within the json file where ending page is located (if it exists)
-    :param info: json file
-    """
-    try:
-        page = info[query]
-        return int(page)
-    except KeyError:
-        return ''
-
 def elsevier_scraper(classifier, query):
     """
     Scrapes metadata of Elsevier (ScienceDirect) articles returned
@@ -237,8 +222,6 @@ def elsevier_scraper(classifier, query):
                     'publication_name': data['prism:publicationName'],
                     'issn': data['prism:issn'],
                     'publication_date': sd_get_date(data['prism:coverDate']),
-                    'start_page': sd_get_page('prism:startingPage', data),
-                    'end_page': sd_get_page('prism:endingPage', data),
                     'database': 'ScienceDirect',
                     'processed_abstract': processed_abstract
                 }
@@ -326,7 +309,7 @@ def pubmed_scraper(classifier, term):
     articles = []
     abstracts = []
 
-    print(f'Getting metadata of PubMed papers:')
+    print(f'Getting metadata of {len(uids)} papers...')
     while i < 200:
         # creates url to query metadata for for 200 uids
         sub_uids = ','.join(uids[i:i + 200])
@@ -338,13 +321,12 @@ def pubmed_scraper(classifier, term):
 
             # stores UIDs returned by query
             for j, article in enumerate(soup.find_all('pubmedarticle')):
-                print(f'\tGetting metadata of paper {i + j + 1}/{total}...')
 
                 # checks if paper is already in database using doi
                 doi = str(article.find('elocationid', eidtype='doi').string)
 
                 if COLL.count_documents({ 'doi': doi }, limit = 1):
-                    print(f'\tThis paper is already stored: {doi}')
+                    print(f'\tPaper already stored: {doi}')
                 else:
                     # store abstract text for use by mat2vec below
                     abstract = pubmed_remove_html(article.abstracttext)
