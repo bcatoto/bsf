@@ -1,3 +1,6 @@
+'''
+I pledge my honor I did not violate the honor code during this examination
+'''
 import regex
 import string
 import unidecode
