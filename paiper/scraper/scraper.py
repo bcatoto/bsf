@@ -2,6 +2,7 @@ from pymongo import MongoClient
 from bs4 import BeautifulSoup
 from paiper.processor import MaterialsTextProcessor
 from paiper.classifier import Classifier
+from progress.bar import ChargingBar
 import requests
 import json
 import re
@@ -78,12 +79,15 @@ def springer_scraper(classifier, subject = '', keyword = ''):
     """
     articles = []
     abstracts = []
+    already_stored = []
     i = 1
     total = 100
 
     subject_print = subject if subject else 'None'
     keyword_print = keyword if keyword else 'None'
     print(f'Database: Springer Nature, Subject: {subject_print}, keyword: {keyword_print}...')
+    bar = ChargingBar('Getting metadata:', max = total, suffix = '%(index)d of %(max)d')
+    
     while i <= total:
         url = springer_url_builder(i, subject, keyword)
         response = requests.get(url)
@@ -95,22 +99,22 @@ def springer_scraper(classifier, subject = '', keyword = ''):
             # updates total to total number of papers in query
             if i == 1:
                 total = int(data['result'][0]['total'])
-                print(f'\tGetting metadata of {total} papers...')
+                bar.max = total
 
             # gets metadata
             for j, record in enumerate(records):
                 # checks if paper is already in database using doi
                 doi = record['doi']
                 if COLL.count_documents({ 'doi': doi }, limit = 1):
-                    print(f'\tPaper already stored: {doi}')
+                    already_stored.append(doi)
                 else:
                     # processes abstract text using processor from mat2vec
                     tokens, materials = PROCESSOR.process(record['abstract'])
                     processed_abstract = ' '.join(tokens)
 
-                    # stores metadata and abstracts
+                    # converts metadata to json format
                     article = {
-                        'doi': record['doi'],
+                        'doi': doi,
                         'title': record['title'],
                         'abstract': record['abstract'],
                         'url': springer_get_url(record['url']),
@@ -124,8 +128,13 @@ def springer_scraper(classifier, subject = '', keyword = ''):
                     }
                     articles.append(article)
                     abstracts.append(processed_abstract)
+                bar.next()
         i += 100
-
+    bar.finish()
+    
+    print(f'Printing dois of {len(already_stored)} previously stored papers:')
+    for doi in already_stored:
+        print(doi)
     store(classifier, articles, abstracts)
 
 def elsevier_get_dois(url):
@@ -169,12 +178,12 @@ def sd_get_creators(creators):
     Turns list of dictionary of creators into list of creators and ignores extraneous data
     :param creators: list of creators where each creator is inside a dictionary
     """
-    list = []
+    entries = []
     for entry in creators:
-        list.append(entry['$'])
-    return list
+        entries.append(entry['$'])
+    return entries
 
-def elsevier_scraper(classifier, query):
+def elsevier_scraper(classifier, query = ''):
     """
     Scrapes metadata of Elsevier (ScienceDirect) articles returned
     by query, processes abstracts, and stores relevant articles
@@ -193,11 +202,10 @@ def elsevier_scraper(classifier, query):
     # gets metadata for ScienceDirect articles
     articles = []
     abstracts = []
+    already_stored = []
 
-    print(f'Getting metadata of ScienceDirect papers:')
+    bar = ChargingBar('Getting metadata:', max = len(dois), suffix = '%(index)d of %(max)d')
     for i, doi in enumerate(dois):
-        print(f'\tGetting and storing metadata of paper {i + 1}/{len(dois)}...')
-
         url = f'https://api.elsevier.com/content/article/doi/{doi}?apiKey={ELSEVIER_API_KEY}&httpAccept=application%2Fjson'
         response = requests.get(url)
 
@@ -206,13 +214,13 @@ def elsevier_scraper(classifier, query):
 
             # checks if paper is already in database using doi
             if COLL.count_documents({ 'doi': doi }, limit = 1):
-                print(f'\tPaper already stored: {doi}')
+                already_stored.append(doi)
             else:
                 # processes abstract text using processor from mat2vec
                 tokens, materials = PROCESSOR.process(data['dc:description'])
                 processed_abstract = ' '.join(tokens)
 
-                # stores paper and metadata in database
+                # converts metadata to json format
                 article = {
                     'doi': doi,
                     'title': data['dc:title'],
@@ -227,8 +235,13 @@ def elsevier_scraper(classifier, query):
                 }
 
                 articles.append(article)
-                abstracts.append(abstract)
-
+                abstracts.append(processed_abstract)
+            bar.next()
+    bar.finish()
+    
+    print(f'Printing dois of {len(already_stored)} previously stored papers:')
+    for doi in already_stored:
+        print(doi)
     store(classifier, articles, abstracts)
 
 def pubmed_remove_html(element):
@@ -271,7 +284,7 @@ def pubmed_get_string(element):
     """
     return element.string if element else None
 
-def pubmed_scraper(classifier, term):
+def pubmed_scraper(classifier, term = ''):
     """
     Scrapes metadata of PubMed articles returned by search term query, processes
     abstracts, and stores relevant articles
@@ -308,43 +321,46 @@ def pubmed_scraper(classifier, term):
     # gets metadata and abstracts
     articles = []
     abstracts = []
+    already_stored = []
 
-    print(f'Getting metadata of {len(uids)} papers...')
+    # print(f'Getting metadata of {len(uids)} papers...')
     while i < 200:
-        # creates url to query metadata for for 200 uids
+        # creates url to query metadata for 200 uids
         sub_uids = ','.join(uids[i:i + 200])
         url = f'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id={sub_uids}&retmode=xml'
         response = requests.get(url)
-
+        
         if response.ok:
             soup = BeautifulSoup(response.content, 'html.parser')
-
+            entries = soup.find_all('pubmedarticle')
+            bar = ChargingBar('Getting metadata:', max = len(entries), suffix = '%(index)d of %(max)d')
             # stores UIDs returned by query
-            for j, article in enumerate(soup.find_all('pubmedarticle')):
+            for j, article in enumerate(entries):
 
                 # checks if paper is already in database using doi
                 doi = str(article.find('elocationid', eidtype='doi').string)
 
                 if COLL.count_documents({ 'doi': doi }, limit = 1):
-                    print(f'\tPaper already stored: {doi}')
+                    already_stored.append(doi)
                 else:
                     # store abstract text for use by mat2vec below
                     abstract = pubmed_remove_html(article.abstracttext)
 
                     # occasionally papers had no abstract, so skip over those
                     if abstract == None:
-                        print(f'\tEmpty abstract: {doi}')
+                        # print(f'\tEmpty abstract: {doi}')
+                        bar.next()
                         continue
 
                     # processes abstract text using processor from mat2vec
                     tokens, materials = PROCESSOR.process(abstract)
                     processed_abstract = ' '.join(tokens)
 
-                    # stores paper and metadata in database
+                    # converts metadata to json format
                     article = {
                         'doi': doi,
                         'title': pubmed_remove_html(article.articletitle),
-                        'abstract': abstract, # see above
+                        'abstract': abstract,
                         'creators': pubmed_get_authors(article.find_all('author')),
                         'publication_name': pubmed_remove_html(article.journal.title),
                         'issn': pubmed_get_string(article.find('issn', issntype='Print')),
@@ -356,10 +372,15 @@ def pubmed_scraper(classifier, term):
 
                     articles.append(article)
                     abstracts.append(processed_abstract)
+                bar.next()
 
         i += 200
-
-    store(classifier, articles, abstracts)
+    bar.finish()
+    
+    print(f'Printing dois of {len(already_stored)} previously stored papers:')
+    for doi in already_stored:
+        print(doi)
+    # store(classifier, articles, abstracts)
 
 def store(classifier, articles, abstracts):
     """
@@ -381,6 +402,7 @@ def store(classifier, articles, abstracts):
     relevant = 0
     irrelevant = 0
 
+    bar = ChargingBar('Checking and storing papers:', max = len(abstracts), suffix = '%(index)d of %(max)d')
     # stores article in database if relevant
     for i, article in enumerate(articles):
         if predictions[i]:
@@ -388,8 +410,9 @@ def store(classifier, articles, abstracts):
             relevant += 1
         else:
             irrelevant += 1
-
-    print(f'Abstracts stored: {relevant} relevant, {irrelevant} irrelevant, {len(articles)} total')
+        bar.next()
+    bar.finish()
+    print(f'Stored {relevant} relevant abstracts. Ignored {irrelevant} irrelevant abstracts. Total: {len(articles)}')
 
 def main():
     springer_scraper(subject='Food Science', keyword='flavor compounds')
