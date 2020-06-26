@@ -10,18 +10,12 @@ import os
 
 SPRINGER_NATURE_API_KEY = os.environ.get('SPRINGER_NATURE_API_KEY', 'Springer key doesn\'t exist')
 ELSEVIER_API_KEY = os.environ.get('ELSEVIER_API_KEY', 'Elsevier key doesn\'t exist')
-SCIENCE_DIRECT_FIELDS = ['dc:title', 'dc:creator', 'prism:publicationName',
-    'prism:issn', 'prism:doi', 'prism:publisher', 'prism:coverDate',
-    'prism:pageRange', 'prism:endingPage', 'dc:description']
-PUBMED_FIELDS = ['articletitle', 'author', 'title', 'issn', 'elocationid',
-    'pubdate', 'abstracttext']
+DATABASE_URL = os.environ.get('DATABASE_URL', 'Database url doesn\'t exist')
 
 PROCESSOR = MaterialsTextProcessor()
 
-DATABASE_URL = os.environ.get('DATABASE_URL', 'Database url doesn\'t exist')
-
 CLIENT = MongoClient(DATABASE_URL)
-DB = CLIENT.papers
+DB = CLIENT.abstracts
 COLL = DB.sample
 
 def springer_url_builder(s, subject, keyword):
@@ -72,47 +66,51 @@ def springer_get_date(date):
     date_array = date.split('-')
     return datetime.datetime(int(date_array[0]), int(date_array[1]), int(date_array[2]))
 
-def springer_scraper(subject = '', keyword = ''):
+def springer_scraper(classifier, subject = '', keyword = ''):
     """
     Scrapes metadata of Springer Nature articles returned by subject and
-    keyword query
+    keyword query, processes abstracts, and stores relevant articles
+    :param classifier: classifier model to determine if abstracts are relevant
     :param subject: subject constraint query, if empty does not include subject
     constraint to query
     :param keyword: keyword constraint query, if empty does not include keyword
     constraint to query
     """
+    articles = []
+    abstracts = []
     i = 1
     total = 100
 
-    print(f'Getting metadata of Springer Nature papers:')
+    subject_print = subject if subject else 'None'
+    keyword_print = keyword if keyword else 'None'
+    print(f'Database: Springer Nature, Subject: {subject_print}, keyword: {keyword_print}...')
     while i <= total:
         url = springer_url_builder(i, subject, keyword)
         response = requests.get(url)
+
         if response.ok:
             data = json.loads(response.content)
+            records = data['records']
 
             # updates total to total number of papers in query
             if i == 1:
                 total = int(data['result'][0]['total'])
+                print(f'\tGetting metadata of {total} papers...')
 
             # gets metadata
-            for j, record in enumerate(data['records']):
-                print(f'\tStoring metadata of paper {i + j}/{total}...')
-
+            for j, record in enumerate(records):
                 # checks if paper is already in database using doi
                 doi = record['doi']
                 if COLL.count_documents({ 'doi': doi }, limit = 1):
-                    print(f'\tThis paper is already stored: {doi}')
+                    print(f'\tPaper already stored: {doi}')
                 else:
                     # processes abstract text using processor from mat2vec
                     tokens, materials = PROCESSOR.process(record['abstract'])
-
-                    # TODO: apply binary classifier to determine if relevant or not
                     processed_abstract = ' '.join(tokens)
 
-                    # stores paper and metadata in database
-                    paper = {
-                        'doi': doi,
+                    # stores metadata and abstracts
+                    article = {
+                        'doi': record['doi'],
                         'title': record['title'],
                         'abstract': record['abstract'],
                         'url': springer_get_url(record['url']),
@@ -126,9 +124,11 @@ def springer_scraper(subject = '', keyword = ''):
                         'database': 'springer',
                         'processed_abstract': processed_abstract
                     }
-                    COLL.insert_one(paper)
-
+                    articles.append(article)
+                    abstracts.append(processed_abstract)
         i += 100
+
+    store(classifier, articles, abstracts)
 
 def elsevier_get_dois(url):
     """
@@ -189,61 +189,64 @@ def sd_get_page(query, info):
     except KeyError:
         return ''
 
-def elsevier_scraper(query):
+def elsevier_scraper(classifier, query):
     """
-    Scrapes metadata of Elsevier (Scopus and ScienceDirect) articles returned
-    by query
+    Scrapes metadata of Elsevier (ScienceDirect) articles returned
+    by query, processes abstracts, and stores relevant articles
+    :param classifier: classifier model to determine if abstracts are relevant
     :param query: Elsevier database query
     """
+    print(f'Database: Science Direct, Query: {query}...')
+
     # creates search urls
-    scopus_url = f'https://api.elsevier.com/content/search/scopus?query=TITLE-ABS-KEY({query})%20AND%20DOCTYPE(ar)&apiKey={ELSEVIER_API_KEY}&httpAccept=application%2Fjson'
-    sd_url = f'https://api.elsevier.com/content/search/sciencedirect?query={query}&apiKey={ELSEVIER_API_KEY}&httpAccept=application%2Fjson'
+    url = f'https://api.elsevier.com/content/search/sciencedirect?query={query}&apiKey={ELSEVIER_API_KEY}&httpAccept=application%2Fjson'
 
     # gets dois
-    # print(f'Getting dois from Scopus database:')
-    # scopus_dois = elsevier_get_dois(scopus_url)
     print(f'Getting dois from ScienceDirect database:')
-    sd_dois = elsevier_get_dois(sd_url)
-
-    # TODO: get metadata for Scopus articles (doesn't return abstract for some reason, contacted API support)
+    dois = elsevier_get_dois(url)
 
     # gets metadata for ScienceDirect articles
+    articles = []
+    abstracts = []
+
     print(f'Getting metadata of ScienceDirect papers:')
-    for i, doi in enumerate(sd_dois):
-        print(f'\tGetting and storing metadata of paper {i + 1}/{len(sd_dois)}...')
+    for i, doi in enumerate(dois):
+        print(f'\tGetting and storing metadata of paper {i + 1}/{len(dois)}...')
 
         url = f'https://api.elsevier.com/content/article/doi/{doi}?apiKey={ELSEVIER_API_KEY}&httpAccept=application%2Fjson'
         response = requests.get(url)
+
         if response.ok:
             data = json.loads(response.content)['full-text-retrieval-response']['coredata']
-            # print('\ttitle:', data['dc:title'])
 
             # checks if paper is already in database using doi
             if COLL.count_documents({ 'doi': doi }, limit = 1):
-                print(f'\tThis paper is already stored: {doi}')
+                print(f'\tPaper already stored: {doi}')
             else:
                 # processes abstract text using processor from mat2vec
                 tokens, materials = PROCESSOR.process(data['dc:description'])
-
-                # TODO: apply binary classifier to determine if relevant or not
                 processed_abstract = ' '.join(tokens)
 
                 # stores paper and metadata in database
-                paper = {
-                        'doi': doi,
-                        'title': data['dc:title'],
-                        'abstract': data['dc:description'],
-                        'url': data['prism:url'],
-                        'creators': sd_get_creators(data['dc:creator']),
-                        'publication_name': data['prism:publicationName'],
-                        'issn': data['prism:issn'],
-                        'publication_date': sd_get_date(data['prism:coverDate']),
-                        'start_page': sd_get_page('prism:startingPage', data),
-                        'end_page': sd_get_page('prism:endingPage', data),
-                        'database': 'ScienceDirect',
-                        'processed_abstract': processed_abstract
-                    }
-                COLL.insert_one(paper)
+                article = {
+                    'doi': doi,
+                    'title': data['dc:title'],
+                    'abstract': data['dc:description'],
+                    'url': data['prism:url'],
+                    'creators': sd_get_creators(data['dc:creator']),
+                    'publication_name': data['prism:publicationName'],
+                    'issn': data['prism:issn'],
+                    'publication_date': sd_get_date(data['prism:coverDate']),
+                    'start_page': sd_get_page('prism:startingPage', data),
+                    'end_page': sd_get_page('prism:endingPage', data),
+                    'database': 'ScienceDirect',
+                    'processed_abstract': processed_abstract
+                }
+
+                articles.append(article)
+                abstracts.append(abstract)
+
+    store(classifier, articles, abstracts)
 
 def pubmed_remove_html(element):
     """
@@ -285,13 +288,16 @@ def pubmed_get_string(element):
     """
     return element.string if element else None
 
-def pubmed_scraper(term):
+def pubmed_scraper(classifier, term):
     """
-    Scrapes metadata of PubMed articles returned by search term query
+    Scrapes metadata of PubMed articles returned by search term query, processes
+    abstracts, and stores relevant articles
+    :param classifier: classifier model to determine if abstracts are relevant
     :param term: PubMed term query
     """
-    uids = []
+    print(f'Database: PubMed, Term: {term}...')
 
+    uids = []
     i = 0
     total = 100000
 
@@ -300,6 +306,7 @@ def pubmed_scraper(term):
     while i < total:
         url = f'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term={term}&retstart={i}&retmax=100000'
         response = requests.get(url)
+
         if response.ok:
             soup = BeautifulSoup(response.content, 'html.parser')
 
@@ -315,22 +322,27 @@ def pubmed_scraper(term):
 
     i = 0
 
-    # getting metadata
+    # gets metadata and abstracts
+    articles = []
+    abstracts = []
+
     print(f'Getting metadata of PubMed papers:')
     while i < 200:
         # creates url to query metadata for for 200 uids
         sub_uids = ','.join(uids[i:i + 200])
         url = f'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id={sub_uids}&retmode=xml'
         response = requests.get(url)
+
         if response.ok:
             soup = BeautifulSoup(response.content, 'html.parser')
 
             # stores UIDs returned by query
             for j, article in enumerate(soup.find_all('pubmedarticle')):
-                print(f'\tGetting and storing metadata of papers {i + j + 1}/{total}...')
+                print(f'\tGetting metadata of paper {i + j + 1}/{total}...')
 
                 # checks if paper is already in database using doi
                 doi = str(article.find('elocationid', eidtype='doi').string)
+
                 if COLL.count_documents({ 'doi': doi }, limit = 1):
                     print(f'\tThis paper is already stored: {doi}')
                 else:
@@ -339,15 +351,15 @@ def pubmed_scraper(term):
 
                     # occasionally papers had no abstract, so skip over those
                     if abstract == None:
-                        print(f'\tThis paper: {doi} has an empty abstract. Skipping...')
+                        print(f'\tEmpty abstract: {doi}')
                         continue
+
+                    # processes abstract text using processor from mat2vec
                     tokens, materials = PROCESSOR.process(abstract)
-                    
-                    # TODO: apply binary classifier to determine if relevant or not
                     processed_abstract = ' '.join(tokens)
 
                     # stores paper and metadata in database
-                    paper = {
+                    article = {
                         'doi': doi,
                         'title': pubmed_remove_html(article.articletitle),
                         'abstract': abstract, # see above
@@ -359,15 +371,48 @@ def pubmed_scraper(term):
                         'database': 'pubmed',
                         'processed_abstract': processed_abstract
                     }
-                    COLL.insert_one(paper)
+
+                    articles.append(article)
+                    abstracts.append(processed_abstract)
 
         i += 200
 
+    store(classifier, articles, abstracts)
+
+def store(classifier, articles, abstracts):
+    """
+    Classifies articles based on processed abstracts and stores in database if
+    relevant
+    :param classifier: classifier model to determine if abstracts are relevant
+    :param articles: list of metadata of abstracts
+    :param abstracts: list of processed abstracts to predict on
+    """
+    # if no abstracts to store, exit
+    if len(abstracts) == 0:
+        print('No abstracts to store')
+        return
+
+    print(f'\tClassifying {len(articles)} abstracts...')
+
+    # uses classifier to determine if relevant
+    predictions = classifier.predict(abstracts)
+    relevant = 0
+    irrelevant = 0
+
+    # stores article in database if relevant
+    for i, article in enumerate(articles):
+        if predictions[i]:
+            COLL.insert_one(article)
+            relevant += 1
+        else:
+            irrelevant += 1
+
+    print(f'Abstracts stored: {relevant} relevant, {irrelevant} irrelevant, {len(articles)} total')
+
 def main():
-    
-    # springer_scraper(subject='Food Science', keyword='flavor compounds')
-    # elsevier_scraper('flavor compounds')
-    # pubmed_scraper('flavor compounds')
+    springer_scraper(subject='Food Science', keyword='flavor compounds')
+    elsevier_scraper('flavor compounds')
+    pubmed_scraper('flavor compounds')
 
 if __name__ == '__main__':
     main()
