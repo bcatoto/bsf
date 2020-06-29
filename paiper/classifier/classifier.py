@@ -13,7 +13,7 @@ MODELS_PATH = os.path.join(os.path.dirname(__file__), 'models')
 
 class Classifier:
 
-    def train_model(self, collection, training_size=0.8, save_pickle=True, doc2vec=False):
+    def train_model(self, collection, training_size=0.8, random_state=5, save_pickle=True, doc2vec=False):
         """
         Trains Classifier based on set of relevant and irrelevant article abstracts
         (from MongoDB database)
@@ -23,13 +23,15 @@ class Classifier:
         :param collection: name of MongoDB collection of articles to train model on
         :param training_size: percentage of articles to go in training set,
         remainder will go in testing set
+        :param random_state: controls random number generator of training and
+        testing set splitter
         :param doc2vec: (not yet used) Bool flag to use doc2vec instead of tfidf
         """
         # queries database
         db = MongoClient(DATABASE_URL).classifier
         articles = list(db[collection].find())
-        
-        # fill abstracts and values lists 
+
+        # fill abstracts and values lists
         abstracts = []
         values = []
         for article in articles:
@@ -38,7 +40,7 @@ class Classifier:
 
         # split into training and testing data
         # good random_state results: 3 (0.95) and 5 (0.975)
-        train_abs, test_abs, train_val, test_val = model_selection.train_test_split(abstracts, values, train_size=training_size, random_state=5)
+        train_abs, test_abs, train_val, test_val = model_selection.train_test_split(abstracts, values, train_size=training_size, random_state=random_state)
 
         # vectorize abstracts
         vectorizer = TfidfVectorizer()
@@ -57,9 +59,9 @@ class Classifier:
 
         # pickles vectorizer and model and saves to respective folders
         if save_pickle:
-            with open(os.path.join(VECTORIZERS_PATH, f'{collection}_{round(score * 100)}_vectorizer.pkl'), 'wb') as file:
+            with open(os.path.join(VECTORIZERS_PATH, f'{collection}_vectorizer.pkl'), 'wb') as file:
                 pickle.dump(vectorizer, file)
-            with open(os.path.join(MODELS_PATH, f'{collection}_{round(score * 100)}_model.pkl'), 'wb') as file:
+            with open(os.path.join(MODELS_PATH, f'{collection}_model.pkl'), 'wb') as file:
                 pickle.dump(model, file)
 
         self._vectorizer = vectorizer

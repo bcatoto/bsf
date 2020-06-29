@@ -44,7 +44,7 @@ def load_articles():
                 doi = article['pmid']
 
             if coll.count_documents({ 'doi': doi }, limit = 1):
-                print(f'\tThis paper is already stored: {doi}')
+                print(f'\tPaper already stored: {doi}')
             else:
                 tokens, materials = processor.process(article['abstract'])
                 article['processed_abstract'] = ' '.join(tokens)
