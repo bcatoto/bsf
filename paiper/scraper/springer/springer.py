@@ -79,7 +79,7 @@ class SpringerScraper(Scraper):
         """
         articles = []
         abstracts = []
-        already_stored = []
+        already_stored = 0
         page = 1
         total = 100
 
@@ -110,7 +110,7 @@ class SpringerScraper(Scraper):
                     doi = record['doi']
 
                     if self._collection.count_documents({ 'doi': doi }, limit = 1):
-                        already_stored.append(doi)
+                        already_stored += 1
                     else:
                         abstract = self._get_value(record, 'abstract')
 
@@ -144,8 +144,6 @@ class SpringerScraper(Scraper):
         bar.finish()
 
         # already stored papers
-        print(f'Already stored: {len(already_stored)}')
-        for doi in already_stored:
-            print(f'\t{doi}')
+        print(f'Already stored: {already_stored}')
 
         self._store(articles, abstracts)
