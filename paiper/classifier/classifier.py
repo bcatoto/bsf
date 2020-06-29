@@ -39,7 +39,7 @@ class Classifier:
             values.append(1 if article['relevant'] else 0)
 
         # split into training and testing data
-        # good random_state results: 3 (0.95) and 5 (0.975)
+        # good random_state results (for Matthew): 3 (0.95) and 5 (0.975)
         train_abs, test_abs, train_val, test_val = model_selection.train_test_split(abstracts, values, train_size=training_size, random_state=random_state)
 
         # vectorize abstracts

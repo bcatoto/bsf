@@ -51,7 +51,7 @@ classifier.predict(abstracts)
 Note that you must specify both a vectorizer and model, or else the predictions will not run.
 
 ### Scraper
-There are three different classes for each database (Springer Nature, Elsevier, and PubMed) that are extensions of the Scraper class. All functions have a scrape function that takes in a number of queries depending on the database. The function scrapes the data, processes the abstract, determines its relevancy, and stores relevant abstracts in the database. To scrape a database with a specific, run the following code with the Elsevier scraper as an example:
+There are three different classes for each database (Springer Nature, Elsevier, and PubMed) that are extensions of the Scraper class. All functions have a scrape function that takes in a number of queries depending on the database. The function scrapes the data, processes the abstract, determines its relevancy, and stores relevant abstracts in the database. To scrape a database with a specific keyword, run the following code with the Elsevier scraper as an example:
 ```
 from paiper.scraper.elsevier import ElsevierScraper
 scraper = ElsevierScraper("collection", classifier)

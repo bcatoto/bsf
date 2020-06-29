@@ -12,10 +12,12 @@ def main():
     # CLASSIFIER
     classifier = Classifier()
     # classifier.train_model('gabby')
+
+    # EITHER LOAD GABBY OR MATTHEW
     classifier.load_vectorizer('gabby_vectorizer.pkl')
     classifier.load_model('gabby_model.pkl')
-    # classifier.load_vectorizer('gabby_vectorizer.pkl')
-    # classifier.load_model('gabby_model.pkl')
+    # classifier.load_vectorizer('matthew_vectorizer.pkl')
+    # classifier.load_model('matthew_model.pkl')
 
     # ELSEVIER SCRAPER
     elsevier = ElsevierScraper(collection='gabby', classifier=classifier)
