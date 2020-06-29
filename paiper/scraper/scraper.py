@@ -53,7 +53,7 @@ class Scraper:
         print(f'Total: {len(articles)}')
 
     def set_collection(self, collection):
-        self._collection = DB[collection]
+        self._collection = db[collection]
 
     def set_classifier(self, classifier):
         self._classifier = classifier

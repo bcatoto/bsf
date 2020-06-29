@@ -5,7 +5,7 @@ import json
 import datetime
 import os
 
-ELSEVIER_API_KEY = os.environ.get('ELSEVIER_API_KEY', 'Springer key doesn\'t exist')
+ELSEVIER_API_KEY = os.environ.get('ELSEVIER_API_KEY', 'Elsevier key doesn\'t exist')
 
 class ElsevierScraper(Scraper):
 
@@ -20,7 +20,7 @@ class ElsevierScraper(Scraper):
         except KeyError:
             return None
 
-    def _get_date(self, date): # could potentially combine this with springer_get_date() since code is identical
+    def _get_date(self, date):
         """
         Converts date into datetime object
         :param date: date formatted 'YYYY-MM-DD'
@@ -90,7 +90,7 @@ class ElsevierScraper(Scraper):
             page += 25
         bar.finish()
 
-        # stores metadata
+        # metadata
         articles = []
         abstracts = []
         already_stored = 0
