@@ -58,20 +58,20 @@ class ElsevierScraper(Scraper):
 
         # gets dois
         dois = []
-        page = 0
+        item = 0
         total = 5000
 
         # progress bar
         bar = ChargingBar('Getting DOIs:', max = 5000, suffix = '%(index)d of %(max)d')
 
-        while page < total:
+        while item < total:
             response = requests.get(url)
 
             if response.ok:
                 data = json.loads(response.content)['search-results']
 
                 # updates total to total number of papers in query
-                if page == 0:
+                if item == 0:
                     total = min(5000, int(data['opensearch:totalResults']))
                     bar.max = total
 
@@ -82,18 +82,21 @@ class ElsevierScraper(Scraper):
 
                 # if current page is last page, break
                 if data['link'][0]['@href'] == data['link'][3]['@href']:
+                    print(item)
                     break
 
                 # sets url to next page in search
                 url = data['link'][-2]['@href']
 
-            page += 25
+                # json file has 25 items per page, so go to the next page
+                item += 25 
         bar.finish()
 
         # metadata
         articles = []
         abstracts = []
         already_stored = 0
+        unreadable_papers = 0
 
         # progress bar
         bar = ChargingBar('Getting metadata:', max = len(dois), suffix = '%(index)d of %(max)d')
@@ -103,7 +106,12 @@ class ElsevierScraper(Scraper):
             response = requests.get(url)
 
             if response.ok:
-                data = json.loads(response.content)['full-text-retrieval-response']['coredata']
+                try:
+                    data = json.loads(response.content)['full-text-retrieval-response']['coredata']
+                except json.decoder.JSONDecodeError:
+                    unreadable_papers += 1
+                    bar.next()
+                    continue
 
                 # checks if paper is already in database using doi
                 if self._collection.count_documents({ 'doi': doi }, limit = 1):
@@ -113,6 +121,7 @@ class ElsevierScraper(Scraper):
 
                     # continues if paper does not have abstract
                     if not abstract:
+                        unreadable_papers += 1
                         bar.next()
                         continue
 
@@ -140,5 +149,6 @@ class ElsevierScraper(Scraper):
 
         # already stored
         print(f'Already stored: {already_stored}')
+        print(f'Unreadable papers: {unreadable_papers}')
 
         self._store(articles, abstracts)
