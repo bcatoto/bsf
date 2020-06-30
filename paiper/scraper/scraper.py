@@ -24,7 +24,7 @@ class Scraper:
         :param stored_abstracts: list of processed stored abstracts to predict on
         :param new_articles: list of metadata of new abstracts
         :param new_abstracts: list of new processed abstracts to predict on
-        :param uid: Bool flag for whether stored IDs are UIDs
+        :param uid: Bool flag for whether stored ids are uid
         """
         # if no abstracts to store, exit
         if not stored_abstracts and not new_abstracts:

@@ -22,12 +22,12 @@ def main():
     query = 'veal flavor compounds'
 
     # ELSEVIER SCRAPER
-    elsevier = ElsevierScraper('matthew', classifier)
-    elsevier.scrape(query)
+    # elsevier = ElsevierScraper('gabby', classifier)
+    # elsevier.scrape(query)
 
     # SPRINGER SCRAPER
-    # springer = SpringerScraper('gabby', classifier)
-    # springer.scrape(keyword=query)
+    springer = SpringerScraper('gabby', classifier)
+    springer.scrape(subject='Food Science')
 
     # PUBMED SCRAPER
     # pubmed = PubmedScraper('gabby', classifier)
