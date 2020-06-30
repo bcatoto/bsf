@@ -20,12 +20,12 @@ def main():
     # classifier.load_model('matthew_model.pkl')
 
     # ELSEVIER SCRAPER
-    elsevier = ElsevierScraper(collection='gabby', classifier=classifier)
-    elsevier.scrape('duck flavor compounds')
+    # elsevier = ElsevierScraper(collection='gabby', classifier=classifier)
+    # elsevier.scrape('duck flavor compounds')
 
     # SPRINGER SCRAPER
-    # springer = SpringerScraper(collection='gabby', classifier=classifier)
-    # springer.scrape(keyword='fats')
+    springer = SpringerScraper(collection='gabby', classifier=classifier)
+    springer.scrape(keyword='flavor')
 
     # PUBMED SCRAPER
     # pubmed = PubmedScraper(collection='gabby', classifier=classifier)

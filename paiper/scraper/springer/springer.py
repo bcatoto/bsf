@@ -80,6 +80,7 @@ class SpringerScraper(Scraper):
         articles = []
         abstracts = []
         already_stored = 0
+        unreadable_papers = 0
         page = 1
         total = 100
 
@@ -117,10 +118,17 @@ class SpringerScraper(Scraper):
                         # continues if paper does not have abstract
                         if not abstract:
                             bar.next()
+                            unreadable_papers += 1
                             continue
 
                         # processes abstract text using processor from mat2vec
-                        tokens, materials = self.processor.process(record['abstract'])
+                        try:
+                            tokens, materials = self.processor.process(record['abstract'])
+                        except OverflowError:
+                            bar.next()
+                            unreadable_papers += 1
+                            continue
+
                         processed_abstract = ' '.join(tokens)
 
                         # formats data for database
@@ -145,5 +153,6 @@ class SpringerScraper(Scraper):
 
         # already stored papers
         print(f'Already stored: {already_stored}')
+        print(f'Unreadable papers: {unreadable_papers}')
 
         self._store(articles, abstracts)

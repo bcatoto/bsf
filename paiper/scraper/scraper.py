@@ -48,6 +48,7 @@ class Scraper:
         if relevant:
             self._collection.insert_many(relevant)
 
+        print(f'Successfully stored {len(relevant)} papers to database.')
         print(f'Relevant abstracts: {len(relevant)}')
         print(f'Irrelevant abstracts: {len(articles) - len(relevant)}')
         print(f'Total: {len(articles)}')
