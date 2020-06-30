@@ -44,8 +44,7 @@ class Scraper:
         total = len(stored_abstracts) + len(new_abstracts)
 
         # progress bar
-        max = len(self._classifiers) * total
-        bar = ChargingBar('Classifying papers:', max=max, suffix='%(index)d of %(max)d')
+        bar = ChargingBar('Classifying papers:', max=len(self._classifiers) * total, suffix='%(index)d of %(max)d')
 
         for i, classifier in enumerate(self._classifiers):
             # classifies articles already stored in collection
@@ -86,7 +85,7 @@ class Scraper:
                     bar.next()
         bar.finish()
 
-        # stores relevant articles based on if tags field contains tags
+        # stores relevant articles if "tags" field contains at least one tag
         relevant = []
         for article in new_articles:
             if article['tags']:
@@ -95,12 +94,13 @@ class Scraper:
             self._collection.insert_many(relevant)
 
         # prints relevant, irrelevant, and already tagged articles for each tag
-        print(f'Total: {total}')
+        print(f'Total articles analyzed: {total}.')
         for i, tag in enumerate(self._tags):
             print()
-            print(f'Abstracts relevant to \'{tag}\': {relevant_count[i]}')
-            print(f'Abstracts irrelevant to \'{tag}\': {total - relevant_count[i] - already_stored[i]}')
-            print(f'Already tagged by \'{tag}\': {already_stored[i]}')
+            print(f'Stored {relevant_count[i]} abstracts relevant to \'{tag}\'.')
+            print(f'Ignored {total - relevant_count[i] - already_stored[i]} abstracts irrelevant to \'{tag}\'.')
+            print(f'Ignored {already_stored[i]} articles already tagged as \'{tag}\'.')
+        print()
 
     def set_tags(self, tags):
         """

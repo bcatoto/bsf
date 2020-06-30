@@ -55,7 +55,7 @@ class PubmedScraper(Scraper):
         abstracts, and stores relevant articles
         :param term: PubMed term query
         """
-        print(f'Database: PubMed, Term: {term}')
+        print(f'Database: PubMed. Term: {term}')
 
         # gets uids
         uids = []
