@@ -3,6 +3,7 @@ from paiper.classifier import Classifier
 from paiper.scraper.elsevier import ElsevierScraper
 from paiper.scraper.springer import SpringerScraper
 from paiper.scraper.pubmed import PubmedScraper
+import sys
 
 # comment out lines that are not relevant on an as-needed basis
 # use this for debugging
@@ -26,7 +27,9 @@ def main():
     # TAGS
     tags = ['gabby', 'matthew']
 
-    query = 'lamb flavor compounds'
+    # QUERY: TYPE AS COMMAND LINE ARGUMENT (e.g: pipenv run python main_script.py food science)
+    query = ' '.join(sys.argv[1:])
+    # query = 'fatty'
 
     # SPRINGER SCRAPER
     springer = SpringerScraper(tags, classifiers)
