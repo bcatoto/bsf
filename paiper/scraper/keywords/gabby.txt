@@ -23,3 +23,6 @@ proteins
 fat
 fats
 amino acids
+soy proteins
+fatty (only Springer done - need to finish rest)
+lamb protein (only Springer done - need to finish rest)
