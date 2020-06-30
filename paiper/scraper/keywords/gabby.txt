@@ -1,0 +1,25 @@
+beef
+chicken
+pork
+duck
+lamb
+sheep
+flavor
+beef flavor
+chicken flavor
+pork flavor
+duck flavor
+lamb flavor
+sheep flavor
+flavor compounds
+beef flavor compounds
+chicken flavor compounds
+pork flavor compounds
+duck flavor compounds
+lamb flavor compounds
+sheep flavor compounds
+protein
+proteins
+fat
+fats
+amino acids
