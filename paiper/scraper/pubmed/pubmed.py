@@ -113,53 +113,55 @@ class PubmedScraper(Scraper):
                     # checks if paper is already in database using uid or doi
                     uid = self._get_string(article.find('pmid'))
 
-                    if self._collection.count_documents({ 'tag': self._tag, 'uid': uid }, limit = 1):
+                    if self._collection.count_documents({ 'tag': { '$all': self._tags }, 'uid': uid }, limit = 1):
                         already_stored += 1
+                        bar.next()
+                        continue
+
+                    # store abstract text for use by mat2vec below
+                    abstract = self._remove_html(article.abstracttext)
+
+                    # continues if paper does not have abstract
+                    if not abstract:
+                        unreadable_papers += 1
+                        bar.next()
+                        continue
+
+                    # processes abstract text using processor from mat2vec
+                    try:
+                        tokens, materials = self.processor.process(abstract)
+                    except OverflowError:
+                        bar.next()
+                        unreadable_papers += 1
+                        continue
+                    processed_abstract = ' '.join(tokens)
+
+                    if self._collection.count_documents({ 'uid': uid }, limit = 1):
+                        stored_ids.append(uid)
+                        stored_abstracts.append(processed_abstract)
                     else:
-                        # store abstract text for use by mat2vec below
-                        abstract = self._remove_html(article.abstracttext)
-
-                        # continues if paper does not have abstract
-                        if not abstract:
-                            unreadable_papers += 1
-                            bar.next()
-                            continue
-
-                        # processes abstract text using processor from mat2vec
-                        try:
-                            tokens, materials = self.processor.process(abstract)
-                        except OverflowError:
-                            bar.next()
-                            unreadable_papers += 1
-                            continue
-                        processed_abstract = ' '.join(tokens)
-
-                        if self._collection.count_documents({ 'uid': uid }, limit = 1):
-                            stored_ids.append(uid)
-                            stored_abstracts.append(processed_abstract)
-                        else:
-                            article = {
-                                'doi': self._get_string(article.find('elocationid', eidtype='doi')),
-                                'uid': uid,
-                                'title': self._remove_html(article.articletitle),
-                                'abstract': abstract,
-                                'creators': self._get_authors(article.find_all('author')),
-                                'publication_name': self._remove_html(article.journal.title),
-                                'issn': self._get_string(article.find('issn', issntype='Print')),
-                                'eissn': self._get_string(article.find('issn', issntype='Electronic')),
-                                'publication_date': self._get_date(article.articledate),
-                                'database': 'pubmed',
-                                'processed_abstract': processed_abstract,
-                                'tag': [ self._tag ]
-                            }
-                            new_articles.append(article)
-                            new_abstracts.append(processed_abstract)
+                        article = {
+                            'doi': self._get_string(article.find('elocationid', eidtype='doi')),
+                            'uid': uid,
+                            'title': self._remove_html(article.articletitle),
+                            'abstract': abstract,
+                            'creators': self._get_authors(article.find_all('author')),
+                            'publication_name': self._remove_html(article.journal.title),
+                            'issn': self._get_string(article.find('issn', issntype='Print')),
+                            'eissn': self._get_string(article.find('issn', issntype='Electronic')),
+                            'publication_date': self._get_date(article.articledate),
+                            'database': 'pubmed',
+                            'processed_abstract': processed_abstract,
+                            'tags': []
+                        }
+                        new_articles.append(article)
+                        new_abstracts.append(processed_abstract)
                     bar.next()
             page += 200
         bar.finish()
 
         # already stored
-        print(f'Already stored: {already_stored}')
+        print(f'Already stored by all tags: {already_stored}')
         print(f'Unreadable papers: {unreadable_papers}')
 
         self._store(stored_ids, stored_abstracts, new_articles, new_abstracts, uid=True)

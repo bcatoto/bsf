@@ -112,52 +112,59 @@ class SpringerScraper(Scraper):
                     # checks if paper is already in database using doi
                     doi = record['doi']
 
-                    if self._collection.count_documents({ 'tag': self._tag, 'doi': doi }, limit = 1):
+                    # continue if paper already tagged by all tags
+                    if self._collection.count_documents({ 'tag': { '$all': self._tags }, 'doi': doi }, limit = 1):
                         already_stored += 1
+                        bar.next()
+                        continue
+
+                    # store abstract text for use by mat2vec below
+                    abstract = self._get_value(record, 'abstract')
+
+                    # continues if paper does not have abstract
+                    if not abstract:
+                        bar.next()
+                        unreadable_papers += 1
+                        continue
+
+                    # processes abstract text using processor from mat2vec
+                    try:
+                        tokens, materials = self.processor.process(abstract)
+                    except OverflowError:
+                        bar.next()
+                        unreadable_papers += 1
+                        continue
+                    processed_abstract = ' '.join(tokens)
+
+                    # store id if already in collection
+                    if self._collection.count_documents({ 'doi': doi }, limit = 1):
+                        stored_ids.append(doi)
+                        stored_abstracts.append(processed_abstract)
+
+                    # create new document and store new article document if not in collection
                     else:
-                        abstract = self._get_value(record, 'abstract')
-
-                        # continues if paper does not have abstract
-                        if not abstract:
-                            bar.next()
-                            unreadable_papers += 1
-                            continue
-
-                        # processes abstract text using processor from mat2vec
-                        try:
-                            tokens, materials = self.processor.process(abstract)
-                        except OverflowError:
-                            bar.next()
-                            unreadable_papers += 1
-                            continue
-                        processed_abstract = ' '.join(tokens)
-
-                        if self._collection.count_documents({ 'doi': doi }, limit = 1):
-                            stored_ids.append(doi)
-                            stored_abstracts.append(processed_abstract)
-                        else:
-                            article = {
-                                'doi': doi,
-                                'title': self._get_value(record, 'title'),
-                                'abstract': self._get_value(record, 'abstract'),
-                                'url': self._get_url(self._get_value(record, 'url')),
-                                'creators': self._get_creators(self._get_value(record, 'creators')),
-                                'publication_name': self._get_value(record, 'publicationName'),
-                                'issn': self._get_value(record, 'issn'),
-                                'eissn': self._get_value(record, 'eIssn'),
-                                'publication_date': self._get_date(self._get_value(record, 'publicationDate')),
-                                'database': 'springer',
-                                'processed_abstract': processed_abstract,
-                                'tag': [ self._tag ]
-                            }
-                            new_articles.append(article)
-                            new_abstracts.append(processed_abstract)
+                        article = {
+                            'doi': doi,
+                            'title': self._get_value(record, 'title'),
+                            'abstract': self._get_value(record, 'abstract'),
+                            'url': self._get_url(self._get_value(record, 'url')),
+                            'creators': self._get_creators(self._get_value(record, 'creators')),
+                            'publication_name': self._get_value(record, 'publicationName'),
+                            'issn': self._get_value(record, 'issn'),
+                            'eissn': self._get_value(record, 'eIssn'),
+                            'publication_date': self._get_date(self._get_value(record, 'publicationDate')),
+                            'database': 'springer',
+                            'processed_abstract': processed_abstract,
+                            'tags': []
+                        }
+                        new_articles.append(article)
+                        new_abstracts.append(processed_abstract)
                     bar.next()
             page += 100
         bar.finish()
 
-        # already stored papers
-        print(f'Already stored: {already_stored}')
+        # unreadable papers
+        print(f'Already stored by all tags: {already_stored}')
         print(f'Unreadable papers: {unreadable_papers}')
 
         self._store(stored_ids, stored_abstracts, new_articles, new_abstracts)

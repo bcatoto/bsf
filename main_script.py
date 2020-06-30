@@ -10,28 +10,35 @@ def main():
     # load_articles()
 
     # CLASSIFIER
-    classifier = Classifier()
-    # classifier.train_model('gabby')
+    # classifier = Classifier()
+    classifiers = [Classifier(), Classifier()]
 
     # EITHER LOAD GABBY OR MATTHEW
-    classifier.load_vectorizer('gabby_vectorizer.pkl')
-    classifier.load_model('gabby_model.pkl')
+    # classifier.load_vectorizer('gabby_vectorizer.pkl')
+    # classifier.load_model('gabby_model.pkl')
     # classifier.load_vectorizer('matthew_vectorizer.pkl')
     # classifier.load_model('matthew_model.pkl')
+    classifiers[0].load_vectorizer('gabby_vectorizer.pkl')
+    classifiers[0].load_model('gabby_model.pkl')
+    classifiers[1].load_vectorizer('matthew_vectorizer.pkl')
+    classifiers[1].load_model('matthew_model.pkl')
 
-    query = 'veal flavor compounds'
+    # TAGS
+    tags = ['gabby', 'matthew']
 
-    # ELSEVIER SCRAPER
-    # elsevier = ElsevierScraper('gabby', classifier)
-    # elsevier.scrape(query)
+    query = 'lamb'
 
     # SPRINGER SCRAPER
-    springer = SpringerScraper('gabby', classifier)
-    springer.scrape(subject='Food Science')
+    springer = SpringerScraper(tags, classifiers)
+    springer.scrape(keyword=query)
 
     # PUBMED SCRAPER
-    # pubmed = PubmedScraper('gabby', classifier)
-    # pubmed.scrape(query)
+    pubmed = PubmedScraper(tags, classifiers)
+    pubmed.scrape(query)
+
+    # ELSEVIER SCRAPER
+    elsevier = ElsevierScraper(tags, classifiers)
+    elsevier.scrape(query)
 
 if __name__ == '__main__':
     main()
