@@ -26,7 +26,7 @@ def main():
     # TAGS
     tags = ['gabby', 'matthew']
 
-    query = 'lamb'
+    query = 'lamb flavor compounds'
 
     # SPRINGER SCRAPER
     springer = SpringerScraper(tags, classifiers)
