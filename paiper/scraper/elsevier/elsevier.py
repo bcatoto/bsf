@@ -89,12 +89,14 @@ class ElsevierScraper(Scraper):
                 url = data['link'][-2]['@href']
 
                 # json file has 25 items per page, so go to the next page
-                item += 25 
+                item += 25
         bar.finish()
 
         # metadata
-        articles = []
-        abstracts = []
+        stored_ids = []
+        stored_abstracts = []
+        new_articles = []
+        new_abstracts = []
         already_stored = 0
         unreadable_papers = 0
 
@@ -114,7 +116,7 @@ class ElsevierScraper(Scraper):
                     continue
 
                 # checks if paper is already in database using doi
-                if self._collection.count_documents({ 'doi': doi }, limit = 1):
+                if self._collection.count_documents({ 'tag': self._tag, 'doi': doi }, limit = 1):
                     already_stored += 1
                 else:
                     abstract = self._get_value(data, 'dc:description')
@@ -126,24 +128,33 @@ class ElsevierScraper(Scraper):
                         continue
 
                     # processes abstract text using processor from mat2vec
-                    tokens, materials = self.processor.process(abstract)
+                    try:
+                        tokens, materials = self.processor.process(abstract)
+                    except OverflowError:
+                        bar.next()
+                        unreadable_papers += 1
+                        continue
                     processed_abstract = ' '.join(tokens)
 
-                    # converts metadata to json format
-                    article = {
-                        'doi': doi,
-                        'title': self._get_value(data, 'dc:title'),
-                        'abstract': self._get_value(data, 'dc:description'),
-                        'url': self._get_value(data, 'prism:url'),
-                        'creators': self._get_creators(self._get_value(data, 'dc:creator')),
-                        'publication_name': self._get_value(data, 'prism:publicationName'),
-                        'issn': self._get_value(data, 'prism:issn'),
-                        'publication_date': self._get_date(self._get_value(data, 'prism:coverDate')),
-                        'database': 'ScienceDirect',
-                        'processed_abstract': processed_abstract
-                    }
-                    articles.append(article)
-                    abstracts.append(processed_abstract)
+                    if self._collection.count_documents({ 'doi': doi }, limit = 1):
+                        stored_ids.append(doi)
+                        stored_abstracts.append(processed_abstract)
+                    else:
+                        article = {
+                            'doi': doi,
+                            'title': self._get_value(data, 'dc:title'),
+                            'abstract': self._get_value(data, 'dc:description'),
+                            'url': self._get_value(data, 'prism:url'),
+                            'creators': self._get_creators(self._get_value(data, 'dc:creator')),
+                            'publication_name': self._get_value(data, 'prism:publicationName'),
+                            'issn': self._get_value(data, 'prism:issn'),
+                            'publication_date': self._get_date(self._get_value(data, 'prism:coverDate')),
+                            'database': 'elsevier',
+                            'processed_abstract': processed_abstract,
+                            'tag': [ self._tag ]
+                        }
+                        new_articles.append(article)
+                        new_abstracts.append(processed_abstract)
             bar.next()
         bar.finish()
 
@@ -151,4 +162,4 @@ class ElsevierScraper(Scraper):
         print(f'Already stored: {already_stored}')
         print(f'Unreadable papers: {unreadable_papers}')
 
-        self._store(articles, abstracts)
+        self._store(stored_ids, stored_abstracts, new_articles, new_abstracts)

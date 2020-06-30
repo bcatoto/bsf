@@ -11,47 +11,79 @@ class Scraper:
     processor = MaterialsTextProcessor()
     db = MongoClient(DATABASE_URL).abstracts
 
-    def __init__(self, collection = 'default', classifier = None):
-        self._collection = self.db[collection]
+    def __init__(self, tag, classifier, collection = 'all'):
+        self._tag = tag
         self._classifier = classifier
+        self._collection = self.db[collection]
 
-    def _store(self, articles, abstracts):
+    def _store(self, stored_ids, stored_abstracts, new_articles, new_abstracts, uid=False):
         """
         Classifies articles based on processed abstracts and stores in database
         if relevant
-
-        :param articles: list of metadata of abstracts
-        :param abstracts: list of processed abstracts to predict on
+        :param stored_ids: ids of already stored documents
+        :param stored_abstracts: list of processed stored abstracts to predict on
+        :param new_articles: list of metadata of new abstracts
+        :param new_abstracts: list of new processed abstracts to predict on
+        :param uid: Bool flag for whether stored IDs are UIDs
         """
         # if no abstracts to store, exit
-        if not abstracts:
+        if not stored_abstracts and not new_abstracts:
             print('No abstracts to store')
             return
 
-        # uses classifier to determine if relevant
-        predictions = self._classifier.predict(abstracts)
+        relevant_count = 0
 
-        # keeps articles to be stored in database
-        relevant = []
+        # updates already stored abstracts with new tag
+        if stored_abstracts:
+            # uses classifier to determine if relevant
+            predictions = self._classifier.predict(stored_abstracts)
 
-        # progress bar
-        bar = ChargingBar('Classifying papers:', max = len(abstracts), suffix = '%(index)d of %(max)d')
+            # keeps articles to be stored in database
+            relevant = []
 
-        # appends articles to be stored in database to relevant list if relevant
-        for i, article in enumerate(articles):
-            if predictions[i]:
-                relevant.append(article)
-            bar.next()
-        bar.finish()
+            # progress bar
+            bar = ChargingBar('Classifying papers:', max = len(stored_abstracts), suffix = '%(index)d of %(max)d')
 
-        # stores relevant abstracts in database
-        if relevant:
-            self._collection.insert_many(relevant)
+            # appends articles to be stored in database to relevant list if relevant
+            for i, id in enumerate(stored_ids):
+                if predictions[i]:
+                    relevant.append(id)
+                    relevant_count += 1
+                bar.next()
+            bar.finish()
 
-        print(f'Successfully stored {len(relevant)} papers to database.')
-        print(f'Relevant abstracts: {len(relevant)}')
-        print(f'Irrelevant abstracts: {len(articles) - len(relevant)}')
-        print(f'Total: {len(articles)}')
+            # if relevant articles exist, store in database
+            if relevant:
+                self._collection.update_many({ 'uid' if uid else 'doi': { '$in': relevant } }, { '$push': { 'tag': self._tag } })
+
+        if new_abstracts:
+            # uses classifier to determine if relevant
+            predictions = self._classifier.predict(new_abstracts)
+
+            # keeps articles to be stored in database
+            relevant = []
+
+            # progress bar
+            bar = ChargingBar('Classifying papers:', max = len(stored_abstracts), suffix = '%(index)d of %(max)d')
+
+            # appends articles to be stored in database to relevant list if relevant
+            for i, article in enumerate(new_articles):
+                if predictions[i]:
+                    relevant.append(article)
+                    relevant_count += 0
+                bar.next()
+            bar.finish()
+
+            # if relevant articles exist, store in database
+            if relevant:
+                self._collection.insert_many(relevant)
+
+        print(f'Relevant abstracts: {relevant_count}')
+        print(f'Irrelevant abstracts: {len(stored_abstracts) + len(new_abstracts) - relevant_count}')
+        print(f'Total: {len(stored_abstracts) + len(new_abstracts)}')
+
+    def set_tag(self, tag):
+        self._tag = tag
 
     def set_collection(self, collection):
         self._collection = db[collection]

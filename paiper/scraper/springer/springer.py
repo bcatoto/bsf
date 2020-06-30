@@ -77,8 +77,10 @@ class SpringerScraper(Scraper):
         :param keyword: keyword constraint query, if empty does not include keyword
         constraint to query
         """
-        articles = []
-        abstracts = []
+        stored_ids = []
+        stored_abstracts = []
+        new_articles = []
+        new_abstracts = []
         already_stored = 0
         unreadable_papers = 0
         page = 1
@@ -110,7 +112,7 @@ class SpringerScraper(Scraper):
                     # checks if paper is already in database using doi
                     doi = record['doi']
 
-                    if self._collection.count_documents({ 'doi': doi }, limit = 1):
+                    if self._collection.count_documents({ 'tag': self._tag, 'doi': doi }, limit = 1):
                         already_stored += 1
                     else:
                         abstract = self._get_value(record, 'abstract')
@@ -123,30 +125,33 @@ class SpringerScraper(Scraper):
 
                         # processes abstract text using processor from mat2vec
                         try:
-                            tokens, materials = self.processor.process(record['abstract'])
+                            tokens, materials = self.processor.process(abstract)
                         except OverflowError:
                             bar.next()
                             unreadable_papers += 1
                             continue
-
                         processed_abstract = ' '.join(tokens)
 
-                        # formats data for database
-                        article = {
-                            'doi': doi,
-                            'title': self._get_value(record, 'title'),
-                            'abstract': self._get_value(record, 'abstract'),
-                            'url': self._get_url(self._get_value(record, 'url')),
-                            'creators': self._get_creators(self._get_value(record, 'creators')),
-                            'publication_name': self._get_value(record, 'publicationName'),
-                            'issn': self._get_value(record, 'issn'),
-                            'eissn': self._get_value(record, 'eIssn'),
-                            'publication_date': self._get_date(self._get_value(record, 'publicationDate')),
-                            'database': 'springer',
-                            'processed_abstract': processed_abstract
-                        }
-                        articles.append(article)
-                        abstracts.append(processed_abstract)
+                        if self._collection.count_documents({ 'doi': doi }, limit = 1):
+                            stored_ids.append(doi)
+                            stored_abstracts.append(processed_abstract)
+                        else:
+                            article = {
+                                'doi': doi,
+                                'title': self._get_value(record, 'title'),
+                                'abstract': self._get_value(record, 'abstract'),
+                                'url': self._get_url(self._get_value(record, 'url')),
+                                'creators': self._get_creators(self._get_value(record, 'creators')),
+                                'publication_name': self._get_value(record, 'publicationName'),
+                                'issn': self._get_value(record, 'issn'),
+                                'eissn': self._get_value(record, 'eIssn'),
+                                'publication_date': self._get_date(self._get_value(record, 'publicationDate')),
+                                'database': 'springer',
+                                'processed_abstract': processed_abstract,
+                                'tag': [ self._tag ]
+                            }
+                            new_articles.append(article)
+                            new_abstracts.append(processed_abstract)
                     bar.next()
             page += 100
         bar.finish()
@@ -155,4 +160,4 @@ class SpringerScraper(Scraper):
         print(f'Already stored: {already_stored}')
         print(f'Unreadable papers: {unreadable_papers}')
 
-        self._store(articles, abstracts)
+        self._store(stored_ids, stored_abstracts, new_articles, new_abstracts)

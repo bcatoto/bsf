@@ -19,17 +19,19 @@ def main():
     # classifier.load_vectorizer('matthew_vectorizer.pkl')
     # classifier.load_model('matthew_model.pkl')
 
+    query = 'veal flavor compounds'
+
     # ELSEVIER SCRAPER
-    # elsevier = ElsevierScraper(collection='gabby', classifier=classifier)
-    # elsevier.scrape('duck flavor compounds')
+    elsevier = ElsevierScraper('matthew', classifier)
+    elsevier.scrape(query)
 
     # SPRINGER SCRAPER
-    springer = SpringerScraper(collection='gabby', classifier=classifier)
-    springer.scrape(keyword='flavor')
+    # springer = SpringerScraper('gabby', classifier)
+    # springer.scrape(keyword=query)
 
     # PUBMED SCRAPER
-    # pubmed = PubmedScraper(collection='gabby', classifier=classifier)
-    # pubmed.scrape('lamb flavor compounds')
+    # pubmed = PubmedScraper('gabby', classifier)
+    # pubmed.scrape(query)
 
 if __name__ == '__main__':
     main()
