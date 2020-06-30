@@ -71,7 +71,7 @@ class Scraper:
 
                 # if relevant articles exist, update tags in database
                 if ids:
-                    self._collection.update_many({ 'uid' if uid else 'doi': { '$in': ids }, 'tags': { '$ne' : self._tags[i] } }, { '$push': { 'tag': self._tags[i] } })
+                    self._collection.update_many({ 'uid' if uid else 'doi': { '$in': ids }, 'tags': { '$ne' : self._tags[i] } }, { '$push': { 'tags': self._tags[i] } })
 
             # classifies new articles not stored in colletion
             if new_abstracts:
@@ -102,7 +102,7 @@ class Scraper:
             print(f'Abstracts irrelevant to \'{tag}\': {total - relevant_count[i] - already_stored[i]}')
             print(f'Already tagged by \'{tag}\': {already_stored[i]}')
 
-    def set_tag(self, tags):
+    def set_tags(self, tags):
         """
         Sets tag
         :param tags: tags associated with each classifier to properly label
@@ -110,7 +110,7 @@ class Scraper:
         """
         self._tags = tags
 
-    def set_classifier(self, classifiers):
+    def set_classifiers(self, classifiers):
         """
         Sets classifier
         :param classifiers: model to determine relevance of abstract
