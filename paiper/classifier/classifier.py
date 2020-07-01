@@ -2,11 +2,11 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report
 from sklearn import model_selection
+from sklearn import utils
 from pymongo import MongoClient
 from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 import pickle
 import os
-import random
 import multiprocessing
 
 DATABASE_URL = os.environ.get('DATABASE_URL', 'Database url doesn\'t exist')
@@ -53,19 +53,29 @@ class Classifier:
 
             print('Testing doc2vec: to be completed')
             print('This part currently does not function properly')
-            train_documents = []
-            test_documents = []
-            for i, train_abstract in enumerate(train_abs):
-                train_documents.append(TaggedDocument(words=train_abstract.split(), tags=train_val[i]))
-            for j, test_abstract in enumerate(test_abstract):
-                test_documents.append(TaggedDocument(words=test_abstract.split(), tags=test_val[i]))
-            cores = multiprocessing.cpu_count()
-            model_d2v = Doc2Vec(dm=0, vector_size=300, negative=5, hs=0, min_count=2, workers=cores, alpha=0.025, min_alpha=0.001)
-            model_d2v.build_vocab([x for x in train_documents])
-            train_documents = random.shuffle(train_documents, random_state=random_state)
-            model_d2v.train(train_documents,total_examples=len(train_documents), epochs=30)
+            train_docs = []
+            test_docs = []
+            for i, abstract in enumerate(train_abs):
+                train_docs.append(TaggedDocument(words=abstract.split(), tags=[train_val[i]]))
+            for i, abstract in enumerate(test_abs):
+                test_docs.append(TaggedDocument(words=abstract.split(), tags=[test_val[i]]))
 
-        
+            cores = multiprocessing.cpu_count()
+            vectorizer = Doc2Vec(dm=0, vector_size=300, negative=5, hs=0, min_count=2, workers=cores, alpha=0.025, min_alpha=0.001)
+            vectorizer.build_vocab(train_docs)
+
+            train_docs = utils.shuffle(train_docs)
+            vectorizer.train(train_docs, total_examples=len(train_docs), epochs=30)
+
+            def vector_for_learning(vectorizer, input_docs):
+                sents = input_docs
+                targets, feature_vectors = zip(*[(doc.tags[0], vectorizer.infer_vector(doc.words, steps=20)) for doc in sents])
+                return targets, feature_vectors
+            # vectorizer.save('./movieModel.d2v')
+
+            train_val, train_feat = vector_for_learning(vectorizer, train_docs)
+            test_val, test_feat = vector_for_learning(vectorizer, test_docs)
+
         # default to tf-idf
         else:
             vectorizer = TfidfVectorizer()
