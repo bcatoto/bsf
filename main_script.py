@@ -34,7 +34,7 @@ def main():
     # SPRINGER SCRAPER
     if args.all or args.springer:
         springer = SpringerScraper(tags, classifiers)
-        springer.scrape(keyword=args.query)
+        springer.scrape(subject=args.subject, keyword=args.query)
 
     # PUBMED SCRAPER
     if args.all or args.pubmed:
