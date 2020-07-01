@@ -7,7 +7,6 @@ import os
 DATABASE_URL = os.environ.get('DATABASE_URL', 'Database url doesn\'t exist')
 
 class Scraper:
-
     processor = MaterialsTextProcessor()
     db = MongoClient(DATABASE_URL).abstracts
 

@@ -1,4 +1,4 @@
-# loads the training data (annotated abstracts) into MongoDB
+# load the training data (annotated abstracts) into MongoDB
 
 from pymongo import MongoClient
 from paiper.processor import MaterialsTextProcessor

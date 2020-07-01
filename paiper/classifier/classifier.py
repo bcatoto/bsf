@@ -47,7 +47,6 @@ class Classifier:
         # vectorize abstracts
         # check for doc2vec option
         if doc2vec:
-            #fill up doc2vec over here
             # https://towardsdatascience.com/implementing-multi-class-text-classification-with-doc2vec-df7c3812824d
             # https://radimrehurek.com/gensim/models/doc2vec.html
 
@@ -64,12 +63,11 @@ class Classifier:
             vectorizer = Doc2Vec(dm=0, vector_size=300, negative=5, hs=0, min_count=2, workers=cores, alpha=0.025, min_alpha=0.001)
             vectorizer.build_vocab(train_docs)
 
-            train_docs = utils.shuffle(train_docs)
+            train_docs = utils.shuffle(train_docs, random_state=random_state)
             vectorizer.train(train_docs, total_examples=len(train_docs), epochs=30)
 
             def vector_for_learning(vectorizer, input_docs):
-                sents = input_docs
-                targets, feature_vectors = zip(*[(doc.tags[0], vectorizer.infer_vector(doc.words, steps=20)) for doc in sents])
+                targets, feature_vectors = zip(*[(doc.tags[0], vectorizer.infer_vector(doc.words, steps=20)) for doc in input_docs])
                 return targets, feature_vectors
             # vectorizer.save('./movieModel.d2v')
 

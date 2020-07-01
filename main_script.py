@@ -4,11 +4,11 @@ from paiper.scraper.elsevier import ElsevierScraper
 from paiper.scraper.springer import SpringerScraper
 from paiper.scraper.pubmed import PubmedScraper
 import argparse
-import sys
 
 def main():
+    # SET UP PARSER
     parser = argparse.ArgumentParser(description='Scrape abstracts')
-    parser.add_argument('query', type=str, help='database query')
+    parser.add_argument('query', type=str, help='database query (requires quotation marks)')
     parser.add_argument('--subject', type=str, default='', help='Springer Nature subject query')
     parser.add_argument('-l', '--load', action='store_true', help='loads training data into database')
     parser.add_argument('-t', '--train', action='store_true', help='trains classifier models')
@@ -18,7 +18,7 @@ def main():
     parser.add_argument('-e', '--elsevier', action='store_true', help='queries Elsevier database')
     args = parser.parse_args()
 
-    # LOADS TRAINING DATA
+    # LOAD TRAINING DATA
     if args.load:
         load_articles()
 

@@ -83,7 +83,7 @@ class SpringerScraper(Scraper):
         new_abstracts = []
         already_stored = 0
         unreadable_papers = 0
-        item = 1
+        item = 0
         total = 100
 
         # prints subject and query made
@@ -94,7 +94,7 @@ class SpringerScraper(Scraper):
         # progress bar
         bar = ChargingBar('Getting metadata:', max = total, suffix = '%(index)d of %(max)d')
 
-        while item <= total:
+        while item < total:
             url = self._url_builder(item, subject, keyword)
             response = requests.get(url)
 
@@ -103,7 +103,7 @@ class SpringerScraper(Scraper):
                 records = data['records']
 
                 # updates total to number of papers in query
-                if item == 1:
+                if item == 0:
                     total = int(data['result'][0]['total'])
                     bar.max = total
 
