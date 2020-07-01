@@ -51,7 +51,7 @@ class ElsevierScraper(Scraper):
         by query, processes abstracts, and stores relevant articles
         :param query: Elsevier database query
         """
-        print(f'Database: Elsevier. Query: {query}')
+        print(f'Database: Elsevier. Query: {query}.')
 
         # creates search url
         url = f'https://api.elsevier.com/content/search/sciencedirect?query={query}&apiKey={ELSEVIER_API_KEY}&httpAccept=application%2Fjson'

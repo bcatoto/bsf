@@ -89,7 +89,7 @@ class SpringerScraper(Scraper):
         # prints subject and query made
         subject_print = subject if subject else 'None'
         keyword_print = keyword if keyword else 'None'
-        print(f'Database: Springer Nature. Subject: {subject_print}, Keyword: {keyword_print}')
+        print(f'Database: Springer Nature. Subject: {subject_print}, Keyword: {keyword_print}.')
 
         # progress bar
         bar = ChargingBar('Getting metadata:', max = total, suffix = '%(index)d of %(max)d')
@@ -160,9 +160,9 @@ class SpringerScraper(Scraper):
                         new_articles.append(article)
                         new_abstracts.append(processed_abstract)
                     bar.next()
-            
+
             # 100 items per page, so go to next page
-            item += 100 
+            item += 100
         bar.finish()
 
         # unreadable papers
