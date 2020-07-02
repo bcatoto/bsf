@@ -30,3 +30,6 @@ Plant Based Meat
 Duck Meat
 Vegan Chicken Nugget
 lamb texture
+Vegan Meat
+Impossible Burger
+Beyond Meat
