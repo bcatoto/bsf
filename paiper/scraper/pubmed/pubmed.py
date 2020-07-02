@@ -86,11 +86,8 @@ class PubmedScraper(Scraper):
         bar.finish()
 
         # gets metadata and abstracts
-        stored_ids = []
-        stored_abstracts = []
-        new_articles = []
-        new_abstracts = []
-        already_stored = 0
+        articles = []
+        abstracts = []
         unreadable_papers = 0
         page = 0
         total = len(uids)
@@ -110,14 +107,6 @@ class PubmedScraper(Scraper):
 
                 # stores UIDs returned by query
                 for article in entries:
-                    # checks if paper is already in database using uid or doi
-                    uid = self._get_string(article.find('pmid'))
-
-                    if self._collection.count_documents({ 'tag': { '$all': self._tags }, 'uid': uid }, limit = 1):
-                        already_stored += 1
-                        bar.next()
-                        continue
-
                     # store abstract text for use by mat2vec below
                     abstract = self._remove_html(article.abstracttext)
 
@@ -131,37 +120,33 @@ class PubmedScraper(Scraper):
                     try:
                         tokens, materials = self.processor.process(abstract)
                     except OverflowError:
-                        bar.next()
                         unreadable_papers += 1
+                        bar.next()
                         continue
                     processed_abstract = ' '.join(tokens)
 
-                    if self._collection.count_documents({ 'uid': uid }, limit = 1):
-                        stored_ids.append(uid)
-                        stored_abstracts.append(processed_abstract)
-                    else:
-                        article = {
-                            'doi': self._get_string(article.find('elocationid', eidtype='doi')),
-                            'uid': uid,
-                            'title': self._remove_html(article.articletitle),
-                            'abstract': abstract,
-                            'creators': self._get_authors(article.find_all('author')),
-                            'publication_name': self._remove_html(article.journal.title),
-                            'issn': self._get_string(article.find('issn', issntype='Print')),
-                            'eissn': self._get_string(article.find('issn', issntype='Electronic')),
-                            'publication_date': self._get_date(article.articledate),
-                            'database': 'pubmed',
-                            'processed_abstract': processed_abstract,
-                            'tags': []
-                        }
-                        new_articles.append(article)
-                        new_abstracts.append(processed_abstract)
+                    article = {
+                        'doi': self._get_string(article.find('elocationid', eidtype='doi')),
+                        'uid': self._get_string(article.find('pmid')),
+                        'title': self._remove_html(article.articletitle),
+                        'abstract': abstract,
+                        'url': None,
+                        'creators': self._get_authors(article.find_all('author')),
+                        'publication_name': self._remove_html(article.journal.title),
+                        'issn': self._get_string(article.find('issn', issntype='Print')),
+                        'eissn': self._get_string(article.find('issn', issntype='Electronic')),
+                        'publication_date': self._get_date(article.articledate),
+                        'database': 'pubmed',
+                        'processed_abstract': processed_abstract,
+                    }
+                    articles.append(article)
+                    abstracts.append(processed_abstract)
                     bar.next()
             page += 200
         bar.finish()
 
-        # already stored
-        print(f'Already stored by all tags: {already_stored}')
-        print(f'Unreadable papers: {unreadable_papers}')
+        # unreadable papers
+        print(f'Unreadable papers: {unreadable_papers}\n')
 
-        self._store(stored_ids, stored_abstracts, new_articles, new_abstracts, uid=True)
+        # classifies and stores metadata
+        self._store(articles, abstracts, doi=False)

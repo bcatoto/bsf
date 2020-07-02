@@ -79,9 +79,8 @@ class SpringerScraper(Scraper):
         """
         stored_ids = []
         stored_abstracts = []
-        new_articles = []
-        new_abstracts = []
-        already_stored = 0
+        articles = []
+        abstracts = []
         unreadable_papers = 0
         item = 0
         total = 100
@@ -109,15 +108,6 @@ class SpringerScraper(Scraper):
 
                 # gets metadata
                 for record in records:
-                    # checks if paper is already in database using doi
-                    doi = record['doi']
-
-                    # continue if paper already tagged by all tags
-                    if self._collection.count_documents({ 'tag': { '$all': self._tags }, 'doi': doi }, limit = 1):
-                        already_stored += 1
-                        bar.next()
-                        continue
-
                     # store abstract text for use by mat2vec below
                     abstract = self._get_value(record, 'abstract')
 
@@ -136,29 +126,24 @@ class SpringerScraper(Scraper):
                         continue
                     processed_abstract = ' '.join(tokens)
 
-                    # store id if already in collection
-                    if self._collection.count_documents({ 'doi': doi }, limit = 1):
-                        stored_ids.append(doi)
-                        stored_abstracts.append(processed_abstract)
-
                     # create new document and store new article document if not in collection
-                    else:
-                        article = {
-                            'doi': doi,
-                            'title': self._get_value(record, 'title'),
-                            'abstract': self._get_value(record, 'abstract'),
-                            'url': self._get_url(self._get_value(record, 'url')),
-                            'creators': self._get_creators(self._get_value(record, 'creators')),
-                            'publication_name': self._get_value(record, 'publicationName'),
-                            'issn': self._get_value(record, 'issn'),
-                            'eissn': self._get_value(record, 'eIssn'),
-                            'publication_date': self._get_date(self._get_value(record, 'publicationDate')),
-                            'database': 'springer',
-                            'processed_abstract': processed_abstract,
-                            'tags': []
-                        }
-                        new_articles.append(article)
-                        new_abstracts.append(processed_abstract)
+                    article = {
+                        'doi': self._get_value(record, 'doi'),
+                        'uid': None,
+                        'title': self._get_value(record, 'title'),
+                        'abstract': self._get_value(record, 'abstract'),
+                        'url': self._get_url(self._get_value(record, 'url')),
+                        'creators': self._get_creators(self._get_value(record, 'creators')),
+                        'publication_name': self._get_value(record, 'publicationName'),
+                        'issn': self._get_value(record, 'issn'),
+                        'eissn': self._get_value(record, 'eIssn'),
+                        'publication_date': self._get_date(self._get_value(record, 'publicationDate')),
+                        'database': 'springer',
+                        'processed_abstract': processed_abstract,
+                        'tags': []
+                    }
+                    articles.append(article)
+                    abstracts.append(processed_abstract)
                     bar.next()
 
             # 100 items per page, so go to next page
@@ -166,7 +151,7 @@ class SpringerScraper(Scraper):
         bar.finish()
 
         # unreadable papers
-        print(f'Already stored by all tags: {already_stored}')
-        print(f'Unreadable papers: {unreadable_papers}')
+        print(f'Unreadable papers: {unreadable_papers}\n')
 
-        self._store(stored_ids, stored_abstracts, new_articles, new_abstracts)
+        # classifies and stores metadata
+        self._store(articles, abstracts)
