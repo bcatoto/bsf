@@ -30,16 +30,16 @@ class Classifier:
         Features: preprocessed abstracts (in vector form)
         Values: relevant (1) or irrelevant (0)
 
-        :param collection: name of MongoDB collection of articles to train model on
         :param training_size: percentage of articles to go in training set,
         remainder will go in testing set
         :param random_state: controls random number generator of training and
         testing set splitter
-        :param doc2vec: (not yet used) Bool flag to use doc2vec instead of tfidf
+        :param save_pickle: Bool flag to pickle the trained model (save for use later)
+        :param doc2vec: Bool flag to use doc2vec instead of tf-idf
         """
-        # queries database
-        db = MongoClient(DATABASE_URL).classifier[self._tag]
-        articles = list(db.find())
+        # queries relevant collection of MongoDB database
+        collection = MongoClient(DATABASE_URL).classifier[self.tag]
+        articles = list(collection.find())
 
         # fill abstracts and values lists
         abstracts = []
@@ -50,14 +50,12 @@ class Classifier:
 
         # split into training and testing data
         # good random_state results (for Matthew): 3 (0.95) and 5 (0.975)
+        # random_state results for Gabby are different
         train_abs, test_abs, train_val, test_val = model_selection.train_test_split(abstracts, values, train_size=training_size, random_state=random_state)
 
         # vectorize abstracts
         # check for doc2vec option
         if doc2vec:
-            # https://towardsdatascience.com/implementing-multi-class-text-classification-with-doc2vec-df7c3812824d
-            # https://radimrehurek.com/gensim/models/doc2vec.html
-
             print('Testing doc2vec: to be completed')
             print('This part currently does not function properly')
             train_docs = []
@@ -95,14 +93,14 @@ class Classifier:
         # scores model based on accuracy of testing set
         test_pred = model.predict(test_feat)
         score = model.score(test_feat, test_val)
-        print(f'{collection} model accuracy: {score}')
+        print(f'{self.tag} model accuracy: {score}')
         print(classification_report(test_val, test_pred))
 
         # pickles vectorizer and model and saves to respective folders
         if save_pickle:
-            with open(os.path.join(VECTORIZERS_PATH, f'{collection}_vectorizer.pkl'), 'wb') as file:
+            with open(os.path.join(VECTORIZERS_PATH, f'{self.tag}_vectorizer.pkl'), 'wb') as file:
                 pickle.dump(vectorizer, file)
-            with open(os.path.join(MODELS_PATH, f'{collection}_model.pkl'), 'wb') as file:
+            with open(os.path.join(MODELS_PATH, f'{self.tag}_model.pkl'), 'wb') as file:
                 pickle.dump(model, file)
 
         self._vectorizer = vectorizer
