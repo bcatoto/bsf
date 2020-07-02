@@ -1,6 +1,5 @@
-# load the training data (annotated abstracts) into MongoDB
-
 from pymongo import MongoClient
+from progress.bar import ChargingBar
 from paiper.processor import MaterialsTextProcessor
 from sys import argv, stderr
 import json
@@ -23,31 +22,39 @@ def load_articles():
         if file.endswith('.json'):
             files.append(file)
 
-    for i, filename in enumerate(files):
-        print(f'Reading file {i + 1}/{len(files)}...')
+    already_stored = 0
 
+    for i, filename in enumerate(files):
         # gets data from file
         file = open(os.path.join(ARTICLE_PATH, filename), 'r')
         data = json.load(file)
         articles = data['articles']
 
         # connects to proper collection
-        coll = db[data['from']]
+        name = data['from']
+        coll = db[name]
+        coll.create_index("id", unique=True)
+
+        new = []
+
+        # progress bar
+        bar = ChargingBar(f'Storing articles from \'{name}\':', max=len(articles), suffix='%(index)d of %(max)d')
 
         for j, article in enumerate(articles):
-            print(f'\tStoring article {j + 1}/{len(articles)}...')
-
-            # handle pmid for PubMed and doi for all other databases
-            try:
-                doi = article['doi']
-            except KeyError:
-                doi = article['pmid']
-
-            if coll.count_documents({ 'doi': doi }, limit = 1):
-                print(f'\tPaper already stored: {doi}')
+            # checks if article is already in database and only stores new
+            # articles
+            if coll.count_documents({ 'id': article['id'] }, limit = 1):
+                already_stored += 1
             else:
                 tokens, materials = processor.process(article['abstract'])
                 article['processed_abstract'] = ' '.join(tokens)
-                coll.insert_one(article)
+                new.append(article)
+            bar.next()
+        bar.finish()
 
-    print('Operation completed')
+        # stores new articles
+        if new:
+            coll.insert_many(new)
+
+        print(f'Total stored in \'{name}\': {len(new)}')
+        print(f'Already stored in \'{name}\': {already_stored}')
