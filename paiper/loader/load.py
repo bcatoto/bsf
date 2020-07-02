@@ -32,8 +32,8 @@ def load_articles():
 
         # connects to collection
         name = data['from']
-        coll = db[name]
-        coll.create_index('id', unique=True)
+        collection = db[name]
+        collection.create_index('id', unique=True)
 
         # progress bar
         bar = ChargingBar(f'Processing articles from \'{name}\':', max=len(articles), suffix='%(index)d of %(max)d')
@@ -53,7 +53,8 @@ def load_articles():
 
         # stores new articles
         print(f'Updating collection...')
-        mongo = coll.bulk_write(requests)
+        if requests:
+            mongo = collection.bulk_write(requests)
 
         print(f'Total stored in \'{name}\': {mongo.upserted_count}')
         print(f'Already stored in \'{name}\': {mongo.matched_count}')
