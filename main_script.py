@@ -33,18 +33,22 @@ def main():
         classifiers[1].load_vectorizer('matthew_vectorizer.pkl')
         classifiers[1].load_model('matthew_model.pkl')
 
+    # USE ALL SCRAPERS
+    if args.all:
+        args.springer, args.pubmed, args.elsevier = True, True, True
+    
     # SPRINGER SCRAPER
-    if args.all or args.springer:
+    if args.springer:
         springer = SpringerScraper(classifiers)
         springer.scrape(subject=args.subject, keyword=args.query)
 
     # PUBMED SCRAPER
-    if args.all or args.pubmed:
+    if args.pubmed:
         pubmed = PubmedScraper(classifiers)
         pubmed.scrape(args.query)
 
     # ELSEVIER SCRAPER
-    if args.all or args.elsevier:
+    if args.elsevier:
         elsevier = ElsevierScraper(classifiers)
         elsevier.scrape(args.query)
 

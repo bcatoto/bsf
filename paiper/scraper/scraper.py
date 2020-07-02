@@ -30,10 +30,8 @@ class Scraper:
         """
         Classifies articles based on processed abstracts and stores in database
         if relevant
-        :param stored_ids: ids of already stored documents
-        :param stored_abstracts: list of processed stored abstracts to predict on
-        :param new_articles: list of metadata of new abstracts
-        :param new_abstracts: list of new processed abstracts to predict on
+        :param articles: list of article objects to add to database
+        :param abstracts: list of processed abstracts to be checked against classifier
         :param doi: Bool flag for whether stored IDs are DOI
         """
         # if no abstracts to store, exit

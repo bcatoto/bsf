@@ -77,8 +77,7 @@ class SpringerScraper(Scraper):
         :param keyword: keyword constraint query, if empty does not include keyword
         constraint to query
         """
-        stored_ids = []
-        stored_abstracts = []
+
         articles = []
         abstracts = []
         unreadable_papers = 0
