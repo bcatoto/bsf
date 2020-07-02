@@ -97,11 +97,8 @@ class ElsevierScraper(Scraper):
         bar.finish()
 
         # metadata
-        stored_ids = []
-        stored_abstracts = []
-        new_articles = []
-        new_abstracts = []
-        already_stored = 0
+        articles = []
+        abstracts = []
         unreadable_papers = 0
 
         # progress bar
@@ -119,12 +116,6 @@ class ElsevierScraper(Scraper):
                     bar.next()
                     continue
 
-                # checks if paper is already in database using doi
-                if self._collection.count_documents({ 'tag': { '$all': self._tags }, 'doi': doi }, limit = 1):
-                    already_stored += 1
-                    bar.next()
-                    continue
-
                 # store abstract text for use by mat2vec below
                 abstract = self._get_value(data, 'dc:description')
 
@@ -138,35 +129,32 @@ class ElsevierScraper(Scraper):
                 try:
                     tokens, materials = self.processor.process(abstract)
                 except OverflowError:
-                    bar.next()
                     unreadable_papers += 1
+                    bar.next()
                     continue
                 processed_abstract = ' '.join(tokens)
 
-                if self._collection.count_documents({ 'doi': doi }, limit = 1):
-                    stored_ids.append(doi)
-                    stored_abstracts.append(processed_abstract)
-                else:
-                    article = {
-                        'doi': doi,
-                        'title': self._get_value(data, 'dc:title'),
-                        'abstract': self._get_value(data, 'dc:description'),
-                        'url': self._get_value(data, 'prism:url'),
-                        'creators': self._get_creators(self._get_value(data, 'dc:creator')),
-                        'publication_name': self._get_value(data, 'prism:publicationName'),
-                        'issn': self._get_value(data, 'prism:issn'),
-                        'publication_date': self._get_date(self._get_value(data, 'prism:coverDate')),
-                        'database': 'elsevier',
-                        'processed_abstract': processed_abstract,
-                        'tags': []
-                    }
-                    new_articles.append(article)
-                    new_abstracts.append(processed_abstract)
+                article = {
+                    'doi': doi,
+                    'uid': None,
+                    'title': self._get_value(data, 'dc:title'),
+                    'abstract': self._get_value(data, 'dc:description'),
+                    'url': self._get_value(data, 'prism:url'),
+                    'creators': self._get_creators(self._get_value(data, 'dc:creator')),
+                    'publication_name': self._get_value(data, 'prism:publicationName'),
+                    'issn': self._get_value(data, 'prism:issn'),
+                    'eissn': None,
+                    'publication_date': self._get_date(self._get_value(data, 'prism:coverDate')),
+                    'database': 'elsevier',
+                    'processed_abstract': processed_abstract,
+                }
+                articles.append(article)
+                abstracts.append(processed_abstract)
             bar.next()
         bar.finish()
 
         # unreadable papers
-        print(f'Already stored by all tags: {already_stored}')
-        print(f'Unreadable papers: {unreadable_papers}')
+        print(f'Unreadable papers: {unreadable_papers}\n')
 
-        self._store(stored_ids, stored_abstracts, new_articles, new_abstracts)
+        # classifies and stores metadata
+        self._store(articles, abstracts)

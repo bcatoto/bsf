@@ -1,4 +1,4 @@
-from pymongo import MongoClient
+from pymongo import MongoClient, UpdateOne
 from progress.bar import ChargingBar
 from paiper.processor import MaterialsTextProcessor
 from sys import argv, stderr
@@ -30,31 +30,31 @@ def load_articles():
         data = json.load(file)
         articles = data['articles']
 
-        # connects to proper collection
+        # connects to collection
         name = data['from']
-        coll = db[name]
-        coll.create_index("id", unique=True)
-
-        new = []
+        collection = db[name]
+        collection.create_index('id', unique=True)
 
         # progress bar
-        bar = ChargingBar(f'Storing articles from \'{name}\':', max=len(articles), suffix='%(index)d of %(max)d')
+        bar = ChargingBar(f'Processing articles from \'{name}\':', max=len(articles), suffix='%(index)d of %(max)d')
 
-        for j, article in enumerate(articles):
-            # checks if article is already in database and only stores new
-            # articles
-            if coll.count_documents({ 'id': article['id'] }, limit = 1):
-                already_stored += 1
-            else:
-                tokens, materials = processor.process(article['abstract'])
-                article['processed_abstract'] = ' '.join(tokens)
-                new.append(article)
+        requests = []
+
+        for article in articles:
+            # processes abstracts
+            tokens, materials = processor.process(article['abstract'])
+            article['processed_abstract'] = ' '.join(tokens)
+
+            # creates update request
+            requests.append(UpdateOne(article, { '$setOnInsert': article }, upsert=True))
+
             bar.next()
         bar.finish()
 
         # stores new articles
-        if new:
-            coll.insert_many(new)
+        print(f'Updating collection...')
+        if requests:
+            mongo = collection.bulk_write(requests)
 
-        print(f'Total stored in \'{name}\': {len(new)}')
-        print(f'Already stored in \'{name}\': {already_stored}')
+        print(f'Total stored in \'{name}\': {mongo.upserted_count}')
+        print(f'Already stored in \'{name}\': {mongo.matched_count}')

@@ -15,7 +15,15 @@ MODELS_PATH = os.path.join(os.path.dirname(__file__), 'models')
 
 class Classifier:
 
-    def train_model(self, collection, training_size=0.8, random_state=5, save_pickle=True, doc2vec=False):
+    def __init__(self, tag):
+        """
+        Initializes Classifier class with given tag
+        :param tag: name of MongoDB collection of articles to train model on
+        and name of document tag
+        """
+        self.tag = tag
+
+    def train_model(self, training_size=0.8, random_state=5, save_pickle=True, doc2vec=False):
         """
         Trains Classifier based on set of relevant and irrelevant article abstracts
         (from MongoDB database)
@@ -30,8 +38,8 @@ class Classifier:
         :param doc2vec: (not yet used) Bool flag to use doc2vec instead of tfidf
         """
         # queries database
-        db = MongoClient(DATABASE_URL).classifier
-        articles = list(db[collection].find())
+        db = MongoClient(DATABASE_URL).classifier[self._tag]
+        articles = list(db.find())
 
         # fill abstracts and values lists
         abstracts = []

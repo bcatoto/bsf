@@ -1,4 +1,4 @@
-from pymongo import MongoClient
+from pymongo import MongoClient, UpdateOne
 from paiper.processor import MaterialsTextProcessor
 from paiper.classifier import Classifier
 from progress.bar import ChargingBar
@@ -10,19 +10,23 @@ class Scraper:
     processor = MaterialsTextProcessor()
     db = MongoClient(DATABASE_URL).abstracts
 
-    def __init__(self, tags, classifiers, collection = 'all'):
+    def __init__(self, classifiers, collection = 'all'):
         """
-        Initializes tags, classifiers, and collection
-        :param tags: tags associated with each classifier to properly label
-        which classifier(s) a document is relevant to
+        Initializes classifiers and collection
         :param classifiers: model to determine relevance of abstract
         :param collection: defaults to 'all', collection to store abstracts in
         """
-        self._tags = tags
         self._classifiers = classifiers
         self._collection = self.db[collection]
+        print(f'Collection: {collection}')
 
-    def _store(self, stored_ids, stored_abstracts, new_articles, new_abstracts, uid=False):
+    def _get_id(self, data, key):
+        try:
+            return data[key]
+        except KeyError:
+            return None
+
+    def _store(self, articles, abstracts, doi=True):
         """
         Classifies articles based on processed abstracts and stores in database
         if relevant
@@ -30,84 +34,79 @@ class Scraper:
         :param stored_abstracts: list of processed stored abstracts to predict on
         :param new_articles: list of metadata of new abstracts
         :param new_abstracts: list of new processed abstracts to predict on
-        :param uid: Bool flag for whether stored IDs are UIDs
+        :param doi: Bool flag for whether stored IDs are DOI
         """
         # if no abstracts to store, exit
-        if not stored_abstracts and not new_abstracts:
+        if not abstracts:
             print('No abstracts to classify')
             return
 
-        # counts
-        relevant_count = [0] * len(self._classifiers)
-        already_stored = [0] * len(self._classifiers)
-        total = len(stored_abstracts) + len(new_abstracts)
+        total = len(abstracts)
 
-        # progress bar
-        bar = ChargingBar('Classifying papers:', max=len(self._classifiers) * total, suffix='%(index)d of %(max)d')
+        for classifier in self._classifiers:
+            # progress bar
+            bar = ChargingBar(f'Classifying papers relevant to \'{classifier.tag}\':', max=total, suffix='%(index)d of %(max)d')
 
-        for i, classifier in enumerate(self._classifiers):
-            # classifies articles already stored in collection
-            if stored_abstracts:
-                # uses classifier to determine if relevant
-                predictions = classifier.predict(stored_abstracts)
+            # uses classifier to determine if relevant
+            predictions = classifier.predict(abstracts)
 
-                # ids (doi or uid) of relevant articles
-                ids = []
+            requests = []
+            irrelevant = 0
 
-                # appends id if article is relevant
-                for j, id in enumerate(stored_ids):
-                    # if article already tagged, continue
-                    if self._collection.count_documents({ 'tags': self._tags[i], 'uid' if uid else 'doi': id }, limit = 1):
-                        bar.next()
-                        already_stored[i] += 1
-                        continue
+            # creates request to stor article with corresponding tag
+            for i, article in enumerate(articles):
+                id = article['doi'] if doi else article['uid']
 
-                    if predictions[j]:
-                        ids.append(id)
-                        relevant_count[i] += 1
-                    bar.next()
+                if predictions[i]:
+                    # inserts new document if it does not exist
+                    requests.append(UpdateOne(
+                        { 'doi' if doi else 'uid': id, },
+                        {
+                            '$setOnInsert': {
+                                'doi': article['doi'],
+                                'uid': article['uid'],
+                                'title': article['title'],
+                                'abstract': article['abstract'],
+                                'url': article['url'],
+                                'creators': article['creators'],
+                                'publication_name': article['publication_name'],
+                                'issn': article['issn'],
+                                'eissn': article['eissn'],
+                                'publication_date': article['publication_date'],
+                                'database': article['database'],
+                                'processed_abstract': article['processed_abstract'],
+                                'tags': [ classifier.tag ]
+                            },
+                        },
+                        upsert=True
+                    ))
 
-                # if relevant articles exist, update tags in database
-                if ids:
-                    self._collection.update_many({ 'uid' if uid else 'doi': { '$in': ids }, 'tags': { '$ne' : self._tags[i] } }, { '$push': { 'tags': self._tags[i] } })
+                    # modifies existing document to include tag
+                    requests.append(UpdateOne(
+                        {
+                            'doi' if doi else 'uid': id,
+                            'tags': { '$ne' : classifier.tag }
+                        },
+                        { '$push': { 'tags': classifier.tag } }
+                    ))
+                else:
+                    irrelevant += 1
+                bar.next()
+            bar.finish()
 
-            # classifies new articles not stored in colletion
-            if new_abstracts:
-                # uses classifier to determine if relevant
-                predictions = classifier.predict(new_abstracts)
+            # updates database
+            print(f'Updating collection...')
+            if requests:
+                mongo = self._collection.bulk_write(requests)
 
-                # appends corresponding tag if article is relevant
-                for j, article in enumerate(new_articles):
-                    if predictions[j]:
-                        article['tags'].append(self._tags[i])
-                        relevant_count[i] += 1
-                    bar.next()
-        bar.finish()
+            # calculates how many new relevant articles were added
+            relevant = mongo.upserted_count + mongo.modified_count if mongo else 0
 
-        # stores relevant articles if "tags" field contains at least one tag
-        relevant = []
-        for article in new_articles:
-            if article['tags']:
-                relevant.append(article)
-        if relevant:
-            self._collection.insert_many(relevant)
-
-        # prints relevant, irrelevant, and already tagged articles for each tag
-        print(f'Total articles analyzed: {total}.')
-        for i, tag in enumerate(self._tags):
+            print(f'Total articles analyzed: {total}.')
+            print(f'Stored {relevant} new abstracts relevant to \'{classifier.tag}\'.')
+            print(f'Ignored {irrelevant} abstracts irrelevant to \'{classifier.tag}\'.')
+            print(f'Ignored {total - relevant - irrelevant} articles already tagged as \'{classifier.tag}\'.')
             print()
-            print(f'Stored {relevant_count[i]} abstracts relevant to \'{tag}\'.')
-            print(f'Ignored {total - relevant_count[i] - already_stored[i]} abstracts irrelevant to \'{tag}\'.')
-            print(f'Ignored {already_stored[i]} articles already tagged as \'{tag}\'.')
-        print()
-
-    def set_tags(self, tags):
-        """
-        Sets tag
-        :param tags: tags associated with each classifier to properly label
-        which classifier(s) a document is relevant to
-        """
-        self._tags = tags
 
     def set_classifiers(self, classifiers):
         """
@@ -122,3 +121,4 @@ class Scraper:
         :param collection: collection to store abstracts and metadata in in
         """
         self._collection = db[collection]
+        print(f'Collection: {collection}')
