@@ -15,7 +15,7 @@ If you access issues with finding the location of your virtual environment, you 
 ## Using the Scripts
 You have two options: 
 
-**Option 1:** run `main_script.py` from the bsf directory with `pipenv run python main_script.py "query" --all`. For instance, to scrape articles from all databases with the search "food science," type `pipenv run python main_script.py "food science" --all`. For more information about the parser, type `pipenv run python main_script.py --help`.
+**Option 1:** run `main_script.py` from the bsf directory. For article scraping, use `pipenv run python main_script.py -q "query" --all`. For instance, to scrape articles from all databases with the search "food science," type `pipenv run python main_script.py -q "food science" --all` (quotation marks required). For information about the other options, type `pipenv run python main_script.py --help`.
 
 **Option 2:** see below
 
@@ -60,3 +60,7 @@ scraper.scrape("flavor compounds")
 
 ### For collaborators
 If packages have been changed upstream, you can update your local environment with `pipenv sync` and `pipenv clean`.
+
+## Acknowledgements
+This project was inspired by the work of Tshitoyan et al. in [Unsupervised word embeddings capture latent knowledge from materials science literature](https://github.com/materialsintelligence/mat2vec). We utilized their processor `process.py` on the paper abstracts to improve the classifier's accuracy.
+
