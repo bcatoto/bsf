@@ -4,6 +4,9 @@ from paiper.scraper.elsevier import ElsevierScraper
 from paiper.scraper.springer import SpringerScraper
 from paiper.scraper.pubmed import PubmedScraper
 import argparse
+import os
+
+KEYWORDS_PATH = os.path.join(os.path.dirname(__file__), 'paiper/scraper/keywords/keywords.txt') # specifically looks for a keywords.txt file
 
 def main():
     # SET UP PARSER
@@ -12,6 +15,7 @@ def main():
     parser.add_argument('-t', '--train', action='store_true', help='trains classifier models')
     parser.add_argument('-q', '--query', type=str, default='', help='database query (requires quotation marks)')
     parser.add_argument('-u', '--subject', type=str, default='', help='Springer Nature subject query (requires quotation marks)')
+    parser.add_argument('-f', '--file', action='store_true', help='opens keywords.txt and scrapes for each keyword, one at a time')
     parser.add_argument('-a', '--all', action='store_true', help='queries all databases')
     parser.add_argument('-s', '--springer', action='store_true', help='queries Springer Nature database')
     parser.add_argument('-p', '--pubmed', action='store_true', help='queries PubMed database')
@@ -36,21 +40,40 @@ def main():
     # USE ALL SCRAPERS
     if args.all:
         args.springer, args.pubmed, args.elsevier = True, True, True
+
+    # READ QUERIES FROM FILE
+    if args.file:
+        print('Loading keywords from file')
+        keywords = []
+        with open(KEYWORDS_PATH, 'r') as queries:
+            keywords = [word.strip() for word in queries]
+        for keyword in keywords:
+            if args.springer:
+                springer = SpringerScraper(classifiers)
+                springer.scrape(subject=args.subject, keyword=keyword)
+            if args.pubmed:
+                pubmed = PubmedScraper(classifiers)
+                pubmed.scrape(keyword)
+            if args.elsevier:
+                elsevier = ElsevierScraper(classifiers)
+                elsevier.scrape(keyword)
     
-    # SPRINGER SCRAPER
-    if args.springer:
-        springer = SpringerScraper(classifiers)
-        springer.scrape(subject=args.subject, keyword=args.query)
+    # USE QUERY FROM COMMAND LINE
+    else:
+        # SPRINGER SCRAPER
+        if args.springer:
+            springer = SpringerScraper(classifiers)
+            springer.scrape(subject=args.subject, keyword=args.query)
 
-    # PUBMED SCRAPER
-    if args.pubmed:
-        pubmed = PubmedScraper(classifiers)
-        pubmed.scrape(args.query)
+        # PUBMED SCRAPER
+        if args.pubmed:
+            pubmed = PubmedScraper(classifiers)
+            pubmed.scrape(args.query)
 
-    # ELSEVIER SCRAPER
-    if args.elsevier:
-        elsevier = ElsevierScraper(classifiers)
-        elsevier.scrape(args.query)
+        # ELSEVIER SCRAPER
+        if args.elsevier:
+            elsevier = ElsevierScraper(classifiers)
+            elsevier.scrape(args.query)
 
 if __name__ == '__main__':
     main()
