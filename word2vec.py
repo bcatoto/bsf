@@ -44,7 +44,7 @@ def main():
             { '$set': { 'processed_abstract': processed_abstract } }
         ))
         bar.next()
-    bar.finished()
+    bar.finish()
 
     print(f'Updating collection...')
     if requests:
