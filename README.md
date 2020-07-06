@@ -5,7 +5,12 @@
 2. Make sure you have [Python 3.7](https://www.python.org/) and the [pip](https://pip.pypa.io/en/stable/) module installed. We also recommend using [pipenv](https://docs.pipenv.org/) to handle the virtual environment. You can install pipenv by typing `pip install --update pipenv`
 3. Navigate to the root folder of this repository and run `pipenv shell` to start the virtual environment. (To exit a virtual environment, use `deactivate`)
 4. Run `pipenv install` to install all the required package (listed in Pipfile). Note: If there is a conflict because the virtual environment is running another version of Python other than 3.7, run `pipenv --python 3.7`. If you are using pipenv and any of the packages fail to install, install the packages separately with `pipenv install package_name`.
-5. Make a copy of `.env-example`, rename it `.env`, and change the value of the assorted keys (e.g. `SPRINGER_NATURE_API_KEY`) to your own API keys.
+5. You will also need to run the following commands to download data:
+```
+cde data download
+python -m spacy download en_core_web_sm 
+```
+6. Make a copy of `.env-example`, rename it `.env`, and change the value of the assorted keys (e.g. `SPRINGER_NATURE_API_KEY`) to your own API keys.
 
 Now you can run `pipenv run python` activate the Python interpreter. The first two terms `pipenv run` ensure that your environment variables are accessible to the interpreter. 
 
