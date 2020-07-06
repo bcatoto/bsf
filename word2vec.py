@@ -28,7 +28,7 @@ def main():
         sents = []
         for sent in doc.sents:
             try:
-                tokens, materials = self.processor.process(sent.text)
+                tokens, materials = processor.process(sent.text)
             except OverflowError:
                 requests.append(DeleteOne({ '_id': article['_id'] }))
                 continue
@@ -48,7 +48,7 @@ def main():
 
     print(f'Updating collection...')
     if requests:
-        mongo = self._collection.bulk_write(requests)
+        mongo = collection.bulk_write(requests)
         print(f'Modified: {mongo.modified_count}.')
 
     # articles = list(collection.find({ 'tags': 'matthew' }))
