@@ -116,14 +116,22 @@ class PubmedScraper(Scraper):
                         bar.next()
                         continue
 
-                    # processes abstract text using processor from mat2vec
-                    try:
-                        tokens, materials = self.processor.process(abstract)
-                    except OverflowError:
-                        unreadable_papers += 1
-                        bar.next()
-                        continue
-                    processed_abstract = ' '.join(tokens)
+                    # segments abstract by sentence
+                    doc = self.nlp(abstract)
+                    sentences = []
+                    for sent in doc.sents:
+                        # processes sentence text using processor from mat2vec
+                        try:
+                            tokens, materials = self.processor.process(sent.text)
+                        except OverflowError:
+                            bar.next()
+                            unreadable_papers += 1
+                            continue
+
+                        processed_sent = ' '.join(tokens)
+                        sentences.append(processed_sent)
+
+                    processed_abstract = '\n'.join(sentences)
 
                     article = {
                         'doi': self._get_string(article.find('elocationid', eidtype='doi')),

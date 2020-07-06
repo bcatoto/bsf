@@ -116,14 +116,22 @@ class SpringerScraper(Scraper):
                         unreadable_papers += 1
                         continue
 
-                    # processes abstract text using processor from mat2vec
-                    try:
-                        tokens, materials = self.processor.process(abstract)
-                    except OverflowError:
-                        bar.next()
-                        unreadable_papers += 1
-                        continue
-                    processed_abstract = ' '.join(tokens)
+                    # segments abstract by sentence
+                    doc = self.nlp(abstract)
+                    sentences = []
+                    for sent in doc.sents:
+                        # processes sentence text using processor from mat2vec
+                        try:
+                            tokens, materials = self.processor.process(sent.text)
+                        except OverflowError:
+                            bar.next()
+                            unreadable_papers += 1
+                            continue
+
+                        processed_sent = ' '.join(tokens)
+                        sentences.append(processed_sent)
+
+                    processed_abstract = '\n'.join(sentences)
 
                     # create new document and store new article document if not in collection
                     article = {

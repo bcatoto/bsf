@@ -2,13 +2,15 @@ from pymongo import MongoClient, UpdateOne
 from paiper.processor import MaterialsTextProcessor
 from paiper.classifier import Classifier
 from progress.bar import ChargingBar
+import spacy
 import os
 
 DATABASE_URL = os.environ.get('DATABASE_URL', 'Database url doesn\'t exist')
 
 class Scraper:
-    processor = MaterialsTextProcessor()
     db = MongoClient(DATABASE_URL).abstracts
+    nlp = spacy.load('en_core_web_sm')
+    processor = MaterialsTextProcessor()
 
     def __init__(self, classifiers, collection = 'all'):
         """
@@ -36,7 +38,7 @@ class Scraper:
         """
         # if no abstracts to store, exit
         if not abstracts:
-            print('No abstracts to classify')
+            print('No abstracts to classify\n')
             return
 
         total = len(abstracts)

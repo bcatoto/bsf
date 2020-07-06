@@ -18,6 +18,7 @@ gensim = "*"
 monty = "*"
 scikit-learn = "*"
 progress = "*"
+spacy = "*"
 
 [requires]
 python_version = "3.7"
