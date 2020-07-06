@@ -1,10 +1,20 @@
-fatty (only Springer done - need to finish rest)
-lamb protein (only Springer done - need to finish rest)
-soy proteins
-Plant Based Meat
-Duck Meat
-Vegan Chicken Nugget
-lamb texture
-Vegan Meat
-Impossible Burger
-Beyond Meat 
+food extrusion
+soy protein
+pea protein
+wheat protein
+vegan
+carbohydrate
+lipid
+protein isolate
+meat analogue
+texturized vegetable protein
+mouth feel
+emulsion
+lupin
+muscle fiber
+flavor profile
+texture
+protein structure
+moisture
+texture
+burger
