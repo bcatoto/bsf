@@ -23,7 +23,7 @@ class Classifier:
         """
         self.tag = tag
 
-    def train_model(self, training_size=0.8, random_state=5, save_pickle=True, doc2vec=False):
+    def train_model(self, training_size=0.8, random_state=5, save=True, doc2vec=False):
         """
         Trains Classifier based on set of relevant and irrelevant article abstracts
         (from MongoDB database)
@@ -34,7 +34,7 @@ class Classifier:
         remainder will go in testing set
         :param random_state: controls random number generator of training and
         testing set splitter
-        :param save_pickle: Bool flag to pickle the trained model (save for use later)
+        :param save: Bool flag to pickle the trained model (save for use later)
         :param doc2vec: Bool flag to use doc2vec instead of tf-idf
         """
         # queries relevant collection of MongoDB database
@@ -97,7 +97,7 @@ class Classifier:
         print(classification_report(test_val, test_pred))
 
         # pickles vectorizer and model and saves to respective folders
-        if save_pickle:
+        if save:
             with open(os.path.join(VECTORIZERS_PATH, f'{self.tag}_vectorizer.pkl'), 'wb') as file:
                 pickle.dump(vectorizer, file)
             with open(os.path.join(MODELS_PATH, f'{self.tag}_model.pkl'), 'wb') as file:
