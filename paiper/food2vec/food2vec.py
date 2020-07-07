@@ -7,16 +7,18 @@ import spacy
 import os
 
 DATABASE_URL = os.environ.get('DATABASE_URL', 'Database url doesn\'t exist')
+MODELS_PATH = os.path.join(os.path.dirname(__file__), 'models')
+CORPUS_PATH = os.path.join(os.path.dirname(__file__), 'corpus.txt')
 
 class Food2Vec:
 
-    def __init__(self, tag):
+    def __init__(self, tag, collection = 'all'):
         """
         Initializes collection
         :param tag: name of tag to filter articles for model training
         """
         self.tag = tag
-        self._collection = MongoClient(DATABASE_URL).abstracts.all
+        self._collection = MongoClient(DATABASE_URL).abstracts[collection]
 
     def update_abstracts(self):
         """
@@ -67,24 +69,29 @@ class Food2Vec:
             print(f'Modified: {mongo.modified_count}.')
 
 
-    def train_model(self):
+    def train_model(self, save=True):
         """
         Trains word2vec model for given tag
         """
-        articles = list(self._collection.find({'tags': self.tag}))
-        abstracts = []
         print('Getting articles...')
+        articles = list(self._collection.find(
+            { 'tags': self.tag },
+            { 'processed_abstract' : 1, '_id': 0 }
+        ))
+        abstracts = []
         for article in articles:
             abstracts.append(article['processed_abstract'])
         sentences = '\n'.join(abstracts)
 
         # writes out corpus to text file
         print('Printing corpus...')
-        with open('corpus.txt', mode='w', encoding='utf8') as outFile:
+        with open(CORPUS_PATH, mode='w', encoding='utf8') as outFile:
             outFile.write(sentences)
-        with open('corpus.txt', mode='r') as outFile:
-            print('Training model. This could take a while...')
-            sentences = LineSentence(outFile)
+
+        # trains word2vec model
+        with open(CORPUS_PATH, mode='r') as inFile:
+            print('Training model...')
+            sentences = LineSentence(inFile)
             model = Word2Vec(
                 sentences,
                 window=8,
@@ -93,17 +100,25 @@ class Food2Vec:
                 negative=15,
                 iter=30
             )
+        os.remove(CORPUS_PATH)
 
-        # no file extension necessary
-        model.save(self.tag)
-        # delete corpus.txt (not useful anymore)
-        os.remove('corpus.txt')
-        print('Model saved!')
+        # saves model
+        if save:
+            model.save(os.path.join(MODELS_PATH, self.tag))
+        self._model = model
+
+        print('Model saved.')
 
     def load_model(self):
         """
-        Loads the specific word2vec model for given tag and prints similarity (change this later)
+        Loads the specific word2vec model associated with tag
         """
-        print(f'Loading model: {self.tag}...')
-        model = Word2Vec.load(f'{self.tag}_word2vec')
-        print('Similarity of \'flavor\' and \'food\':', model.similarity('flavor', 'food'))
+        self._model = Word2Vec.load(self.tag)
+
+    def most_similar(query, topn=1):
+        """
+        Return terms most similar to query
+        :param query: term to compare similarity to
+        :topn: default to 1, number of terms returned in order of most similar
+        """
+        print(self._model.wv.most_similar(query, topn=topn))

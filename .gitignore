@@ -1,7 +1,7 @@
 # Custom
 .DS_Store
 
-# Ignores models in food2vec
+# Ignores models in food2vec (except Matthew)
 paiper/food2vec/models/*
 !paiper/food2vec/models/matthew
 

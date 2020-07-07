@@ -13,16 +13,16 @@ def main():
     # SET UP PARSER
     parser = argparse.ArgumentParser(description='Scrape abstracts')
     parser.add_argument('-l', '--load', action='store_true', help='loads training data into database')
-    parser.add_argument('-t', '--train', action='store_true', help='trains classifier models')
+    parser.add_argument('-c', '--classifier', action='store_true', help='trains classifier models')
     parser.add_argument('-q', '--query', type=str, default='', help='database query (requires quotation marks)')
     parser.add_argument('-u', '--subject', type=str, default='', help='Springer Nature subject query (requires quotation marks)')
-    parser.add_argument('-f', '--file', action='store_true', help='opens keywords.txt and scrapes for each keyword, one at a time')
+    parser.add_argument('-k', '--keywords', action='store_true', help='opens keywords.txt and scrapes for each keyword, one at a time')
     parser.add_argument('-c', '--collection', type=str, default='all', help='collection to store abstracts in')
     parser.add_argument('-a', '--all', action='store_true', help='queries all databases')
     parser.add_argument('-s', '--springer', action='store_true', help='queries Springer Nature database')
     parser.add_argument('-p', '--pubmed', action='store_true', help='queries PubMed database')
     parser.add_argument('-e', '--elsevier', action='store_true', help='queries Elsevier database')
-    parser.add_argument('-m', '--food2vec', action='store_true', help='trains word2vec models')
+    parser.add_argument('-f', '--food2vec', action='store_true', help='trains word2vec models')
     args = parser.parse_args()
 
     # LOAD TRAINING DATA
@@ -31,7 +31,7 @@ def main():
 
     # CLASSIFIER
     classifiers = [Classifier('gabby'), Classifier('matthew')]
-    if args.train:
+    if args.classifier:
         classifiers[0].train_model()
         classifiers[1].train_model()
     else:
@@ -78,8 +78,6 @@ def main():
             elsevier = ElsevierScraper(classifiers, collection=args.collection)
             elsevier.scrape(args.query)
 
-
-    # food2vec_model.update_abstracts() --> don't need to run this since scrapers were updated
     food2vec_models = [Food2Vec('gabby'), Food2Vec('matthew')]
 
     # RUN WORD2VEC
@@ -89,7 +87,6 @@ def main():
     else:
         food2vec_models[0].load_model()
         food2vec_models[1].load_model()
-
 
 if __name__ == '__main__':
     main()
