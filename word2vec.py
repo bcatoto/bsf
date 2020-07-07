@@ -96,6 +96,8 @@ class Food2Vec:
         
         # no file extension necessary
         model.save(f'{self.tag}_word2vec')
+        # delete corpus.txt (not useful anymore)
+        os.remove('corpus.txt')
         print('Model saved!')
 
     def load_model(self):
