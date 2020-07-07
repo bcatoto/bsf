@@ -71,7 +71,7 @@ class Food2Vec:
         """
         Trains word2vec model for given tag
         """
-        articles = list(self._collection.find({'tags': 'matthew' }))
+        articles = list(self._collection.find({'tags': self.tag}))
         abstracts = []
         print('Getting articles...')
         for article in articles:
@@ -80,8 +80,9 @@ class Food2Vec:
         
         # writes out corpus to text file
         print('Printing corpus...')
-        with open('corpus.txt', mode='r+', encoding='utf8') as outFile:
+        with open('corpus.txt', mode='w', encoding='utf8') as outFile:
             outFile.write(sentences)
+        with open('corpus.txt', mode='r') as outFile:
             print('Training model. This could take a while...')
             sentences = LineSentence(outFile)
             model = Word2Vec(
