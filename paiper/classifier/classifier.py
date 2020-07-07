@@ -111,7 +111,8 @@ class Classifier:
         Loads given vectorizer from vectorizer folder
         :param vectorizer_name: name of vectorizer to load into Classifier
         """
-        with open(os.path.join(VECTORIZERS_PATH, vectorizer_name), 'rb') as file:
+        filename = os.path.join(VECTORIZERS_PATH, f'{self.tag}_vectorizer.pkl')
+        with open(filename, 'rb') as file:
             self._vectorizer = pickle.load(file)
 
     def load_model(self, model_name):
@@ -119,7 +120,8 @@ class Classifier:
         Loads given model from models folder
         :param model_name: name of model to load into Classifier
         """
-        with open(os.path.join(MODELS_PATH, model_name), 'rb') as file:
+        filename = os.path.join(MODELS_PATH, f'{self.tag}_model.pkl')
+        with open(filename, 'rb') as file:
             self._model = pickle.load(file)
 
     def predict(self, abstracts):
