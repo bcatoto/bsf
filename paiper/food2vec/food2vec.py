@@ -1,5 +1,4 @@
-from paiper.processor import MaterialsTextProcessor
-from pymongo import MongoClient, UpdateOne, DeleteOne
+from pymongo import MongoClient
 from gensim.models import Word2Vec
 from gensim.models.word2vec import LineSentence
 from progress.bar import ChargingBar
@@ -16,6 +15,7 @@ class Food2Vec:
         """
         Initializes collection
         :param tag: name of tag to filter articles for model training
+        :param collection: defaults to 'all', collection to store/load abstracts from
         """
         self.tag = tag
         self._collection = MongoClient(DATABASE_URL).abstracts[collection]
@@ -58,9 +58,8 @@ class Food2Vec:
         # saves model
         if save:
             model.save(os.path.join(MODELS_PATH, self.tag))
+            print('Model saved.')
         self._model = model
-
-        print('Model saved.')
 
     def load_model(self):
         """
@@ -73,7 +72,7 @@ class Food2Vec:
         """
         Returns terms most similar to query
         :param term: term to compare similarity to
-        :topn: default to 1, number of terms returned in order of most similar
+        :param topn: default to 1, number of terms returned in order of most similar
         """
         similar = self._model.wv.most_similar(term, topn=topn)
 
@@ -87,7 +86,7 @@ class Food2Vec:
         :param term: term to find analogy to
         :param same: term in given pair analogy that term is similar to
         :param opposite: term in given pair analogy that analogy is looking for
-        :topn: default to 1, number of terms returned in order of most similar
+        :param topn: default to 1, number of terms returned in order of most similar
         """
         analogy = self._model.wv.most_similar(
             positive=[opposite, term],

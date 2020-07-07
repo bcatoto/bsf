@@ -19,7 +19,7 @@ For your convenience, all of the scripts can be accessed by running `main_script
 
 
 ### Loader
-Load specific article metadata (in .json format) to a MongoDB database. These articles should be flagged as relevant and irrelevant, as they are used to train Classifier (see below). 
+Load specific article metadata (in .json format) to a MongoDB database. These articles should be flagged as relevant and irrelevant, as they are used to train **Classifier** (see below). 
 
 1. Put the articles you want to load into the `paiper/loader/articles` folder. They must be in .json form (see repository for example)
 2. To load the articles into a MongoDB collection, run `pipenv run python main_script.py -l` from the bsf directory. A MongoDB collection will be created (if it doesn't already exist) that matches the name of the json file. If multiple json files are in the articles folder, then each file's contents will be added to their respective collections.
