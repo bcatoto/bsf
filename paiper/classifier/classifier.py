@@ -18,7 +18,7 @@ class Classifier:
     def __init__(self, tag):
         """
         Initializes Classifier class with given tag
-        :param tag: name of MongoDB collection of articles to train model on
+        :param tag: name of tag to filter articles for model training
         and name of document tag
         """
         self.tag = tag
