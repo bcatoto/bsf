@@ -1,6 +1,10 @@
 # Custom
 .DS_Store
 
+# Ignores models in food2vec
+paiper/food2vec/models/*
+!paiper/food2vec/models/.keep
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
