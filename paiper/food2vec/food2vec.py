@@ -20,55 +20,6 @@ class Food2Vec:
         self.tag = tag
         self._collection = MongoClient(DATABASE_URL).abstracts[collection]
 
-    def update_abstracts(self):
-        """
-        Converts processed abstracts in database so that they are segmented by sentence
-        """
-        processor = MaterialsTextProcessor()
-        nlp = spacy.load('en_core_web_sm')
-
-        print('Getting abstracts...')
-        articles = list(self._collection.find({}, { 'abstract': 1 }))
-
-        # charging bar
-        bar = ChargingBar(f'Updating abstracts:', max=len(articles), suffix='%(index)d of %(max)d')
-
-        requests = []
-        delete = []
-
-        for article in articles:
-            doc = nlp(article['abstract'])
-
-            # rebuild each sentence by applying Mat2Vec tokenizer and joining tokens with spaces
-            sents = []
-            for sent in doc.sents:
-                try:
-                    tokens, materials = processor.process(sent.text)
-                except OverflowError:
-                    requests.append(DeleteOne({ '_id': article['_id'] }))
-                    continue
-
-                processed_sent = ' '.join(tokens)
-                sents.append(processed_sent)
-
-            # ensure that each sentence is on a new line (required for Word2Vec)
-            processed_abstract = '\n'.join(sents)
-
-            # modifies existing document to include tag
-            requests.append(UpdateOne(
-                { '_id' : article['_id'] },
-                { '$set': { 'processed_abstract': processed_abstract } }
-            ))
-            bar.next()
-        bar.finish()
-
-        # update MongoDB
-        print(f'Updating collection...')
-        if requests:
-            mongo = self._collection.bulk_write(requests)
-            print(f'Modified: {mongo.modified_count}.')
-
-
     def train_model(self, save=True):
         """
         Trains word2vec model for given tag
