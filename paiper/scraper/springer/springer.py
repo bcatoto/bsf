@@ -71,7 +71,6 @@ class SpringerScraper(Scraper):
         """
         Scrapes metadata of Springer Nature articles returned by subject and
         keyword query, processes abstracts, and stores relevant articles
-
         :param subject: subject constraint query, if empty does not include subject
         constraint to query
         :param keyword: keyword constraint query, if empty does not include keyword

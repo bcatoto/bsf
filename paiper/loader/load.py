@@ -1,7 +1,6 @@
 from pymongo import MongoClient, UpdateOne
 from progress.bar import ChargingBar
 from paiper.processor import MaterialsTextProcessor
-from sys import argv, stderr
 import json
 import os
 
@@ -10,8 +9,7 @@ ARTICLE_PATH = os.path.join(os.path.dirname(__file__), 'articles')
 
 def load_articles():
     """
-    Loads all articles from all json files in articles folder into MongoDB
-    database
+    Loads all articles from all json files in articles folder into MongoDB database
     """
     processor = MaterialsTextProcessor()
     db = MongoClient(DATABASE_URL).classifier

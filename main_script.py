@@ -3,14 +3,14 @@ from paiper.classifier import Classifier
 from paiper.scraper.elsevier import ElsevierScraper
 from paiper.scraper.springer import SpringerScraper
 from paiper.scraper.pubmed import PubmedScraper
-from paiper.food2vec import Food2Vec # consider renaming word2vec.py to food2vec.py
+from paiper.food2vec import Food2Vec
 import argparse
 import os
 
 KEYWORDS_PATH = os.path.join(os.path.dirname(__file__), 'paiper/scraper/keywords/keywords.txt')
 
 def main():
-    # SET UP PARSER
+    # set up parser
     parser = argparse.ArgumentParser(description='Scrape abstracts')
     parser.add_argument('-l', '--load', action='store_true', help='loads training data into database')
     parser.add_argument('-c', '--classifier', action='store_true', help='trains classifiers')
@@ -28,11 +28,11 @@ def main():
 
     args = parser.parse_args()
 
-    # LOAD TRAINING DATA
+    # load training data
     if args.load:
         load_articles()
 
-    # CLASSIFIER
+    # classifier
     classifiers = [Classifier('gabby'), Classifier('matthew')]
     for classifier in classifiers:
         if args.classifier:
@@ -41,11 +41,11 @@ def main():
             classifier.load_vectorizer()
             classifier.load_model()
 
-    # USE ALL SCRAPERS
+    # use all scrapers
     if args.all:
         args.springer = args.pubmed = args.elsevier = True
 
-    # READ QUERIES FROM FILE
+    # read queries from keywords.txt
     if args.keywords:
         print('Loading keywords from file...')
         keywords = []
@@ -62,24 +62,24 @@ def main():
                 elsevier = ElsevierScraper(classifiers, collection=args.collection, save_all=args.store)
                 elsevier.scrape(keyword)
 
-    # USE QUERY FROM COMMAND LINE
+    # use query from command line
     else:
-        # SPRINGER SCRAPER
+        # springer scraper
         if args.springer:
             springer = SpringerScraper(classifiers, collection=args.collection, save_all=args.store)
             springer.scrape(subject=args.subject, keyword=args.query)
 
-        # PUBMED SCRAPER
+        # pubmed scraper
         if args.pubmed:
             pubmed = PubmedScraper(classifiers, collection=args.collection, save_all=args.store)
             pubmed.scrape(args.query)
 
-        # ELSEVIER SCRAPER
+        # elsevier scraper
         if args.elsevier:
             elsevier = ElsevierScraper(classifiers, collection=args.collection, save_all=args.store)
             elsevier.scrape(args.query)
 
-    # RUN WORD2VEC
+    # run word2vec
     if args.food2vec:
         models = [Food2Vec('gabby'), Food2Vec('matthew')]
         for model in models:

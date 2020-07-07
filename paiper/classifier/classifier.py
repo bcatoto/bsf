@@ -74,7 +74,6 @@ class Classifier:
             def vector_for_learning(vectorizer, input_docs):
                 targets, feature_vectors = zip(*[(doc.tags[0], vectorizer.infer_vector(doc.words, steps=20)) for doc in input_docs])
                 return targets, feature_vectors
-            # vectorizer.save('./movieModel.d2v')
 
             train_val, train_feat = vector_for_learning(vectorizer, train_docs)
             test_val, test_feat = vector_for_learning(vectorizer, test_docs)
@@ -108,7 +107,6 @@ class Classifier:
     def load_vectorizer(self):
         """
         Loads given vectorizer from vectorizer folder
-        :param vectorizer_name: name of vectorizer to load into Classifier
         """
         filename = os.path.join(VECTORIZERS_PATH, f'{self.tag}_vectorizer.pkl')
         with open(filename, 'rb') as file:
@@ -117,7 +115,6 @@ class Classifier:
     def load_model(self):
         """
         Loads given model from models folder
-        :param model_name: name of model to load into Classifier
         """
         filename = os.path.join(MODELS_PATH, f'{self.tag}_model.pkl')
         with open(filename, 'rb') as file:
@@ -126,7 +123,7 @@ class Classifier:
     def predict(self, abstracts):
         """
         Vectorizes the abstracts (in list form) and returns predictions of model on features
-        :param features: article abstracts to be classified as relevant or irrelevant
+        :param abstracts: article abstracts to be classified as relevant or irrelevant
         based on model of Classifier
         """
         features = self._vectorizer.transform(abstracts)
