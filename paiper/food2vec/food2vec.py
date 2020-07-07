@@ -64,12 +64,32 @@ class Food2Vec:
         """
         Loads the specific word2vec model associated with tag
         """
-        self._model = Word2Vec.load(self.tag)
+        filename = os.path.join(MODELS_PATH, self.tag)
+        self._model = Word2Vec.load(filename)
 
-    def most_similar(query, topn=1):
+    def most_similar(self, term, topn=1):
         """
         Return terms most similar to query
-        :param query: term to compare similarity to
+        :param term: term to compare similarity to
         :topn: default to 1, number of terms returned in order of most similar
         """
-        print(self._model.wv.most_similar(query, topn=topn))
+        similar = self._model.wv.most_similar(term, topn=topn)
+        
+        print(f'Model: {self.tag}, Term: {term}')
+        for result in similar:
+            print(f'\t{result[0]}, {result[1]}')
+
+    def analogy(self, term, same, opposite, topn=1):
+        """
+        Return terms most similar to query
+        :param term: term to compare similarity to
+        :topn: default to 1, number of terms returned in order of most similar
+        """
+        analogy = self._model.wv.most_similar(
+            positive=[opposite, term],
+            negative=[same],
+            topn=topn)
+
+        print(f'Model: {self.tag}, Term: {term}, Pair: {same} to {opposite}')
+        for result in analogy:
+            print(f'\t{result[0]}, {result[1]}')

@@ -13,16 +13,17 @@ def main():
     # SET UP PARSER
     parser = argparse.ArgumentParser(description='Scrape abstracts')
     parser.add_argument('-l', '--load', action='store_true', help='loads training data into database')
-    parser.add_argument('-c', '--classifier', action='store_true', help='trains classifier models')
-    parser.add_argument('-q', '--query', type=str, default='', help='database query (requires quotation marks)')
-    parser.add_argument('-u', '--subject', type=str, default='', help='Springer Nature subject query (requires quotation marks)')
+    parser.add_argument('-c', '--classifier', action='store_true', help='initialize classifiers')
+    parser.add_argument('-f', '--food2vec', action='store_true', help='initialize word2vec models')
+    parser.add_argument('-t', '--train', action='store_true', help='train models (Classifier or Food2Vec)')
     parser.add_argument('-k', '--keywords', action='store_true', help='opens keywords.txt and scrapes for each keyword, one at a time')
-    parser.add_argument('-c', '--collection', type=str, default='all', help='collection to store abstracts in')
-    parser.add_argument('-a', '--all', action='store_true', help='queries all databases')
-    parser.add_argument('-s', '--springer', action='store_true', help='queries Springer Nature database')
-    parser.add_argument('-p', '--pubmed', action='store_true', help='queries PubMed database')
-    parser.add_argument('-e', '--elsevier', action='store_true', help='queries Elsevier database')
-    parser.add_argument('-f', '--food2vec', action='store_true', help='trains word2vec models')
+    parser.add_argument('--query', type=str, default='', help='database query (requires quotation marks)')
+    parser.add_argument('--subject', type=str, default='', help='Springer Nature subject query (requires quotation marks)')
+    parser.add_argument('--collection', type=str, default='all', help='collection to store scraped abstracts in')
+    parser.add_argument('-a', '--all', action='store_true', help='scrapes all databases')
+    parser.add_argument('-s', '--springer', action='store_true', help='scrapes Springer Nature database')
+    parser.add_argument('-p', '--pubmed', action='store_true', help='scrapes PubMed database')
+    parser.add_argument('-e', '--elsevier', action='store_true', help='scrapes Elsevier database')
     args = parser.parse_args()
 
     # LOAD TRAINING DATA
@@ -30,22 +31,21 @@ def main():
         load_articles()
 
     # CLASSIFIER
-    classifiers = [Classifier('gabby'), Classifier('matthew')]
     if args.classifier:
-        classifiers[0].train_model()
-        classifiers[1].train_model()
-    else:
-        classifiers[0].load_vectorizer('gabby_vectorizer.pkl')
-        classifiers[0].load_model('gabby_model.pkl')
-        classifiers[1].load_vectorizer('matthew_vectorizer.pkl')
-        classifiers[1].load_model('matthew_model.pkl')
+        classifiers = [Classifier('gabby'), Classifier('matthew')]
+        for classifier in classifiers:
+            if args.train:
+                classifier.train_model()
+            else:
+                classifier.load_vectorizer()
+                classifier.load_model()
 
     # USE ALL SCRAPERS
     if args.all:
         args.springer = args.pubmed = args.elsevier = True
 
     # READ QUERIES FROM FILE
-    if args.file:
+    if args.keywords:
         print('Loading keywords from file...')
         keywords = []
         with open(KEYWORDS_PATH, 'r') as queries:
@@ -78,15 +78,23 @@ def main():
             elsevier = ElsevierScraper(classifiers, collection=args.collection)
             elsevier.scrape(args.query)
 
-    food2vec_models = [Food2Vec('gabby'), Food2Vec('matthew')]
-
     # RUN WORD2VEC
     if args.food2vec:
-        food2vec_models[0].train_model()
-        food2vec_models[1].train_model()
-    else:
-        food2vec_models[0].load_model()
-        food2vec_models[1].load_model()
+        models = [Food2Vec('gabby'), Food2Vec('matthew')]
+        for model in models:
+            if args.train:
+                model.train_model()
+            else:
+                model.load_model()
+
+            # similarity
+            model.most_similar('flavor', topn=5)
+            model.most_similar('beef', topn=5)
+            model.most_similar('duck', topn=5)
+            model.most_similar('lamb', topn=5)
+
+            # analogy
+            model.analogy('soy', 'beef', 'hemoglobin')
 
 if __name__ == '__main__':
     main()
