@@ -77,7 +77,7 @@ class Food2Vec:
         for article in articles:
             abstracts.append(article['processed_abstract'])
         sentences = '\n'.join(abstracts)
-        
+
         # writes out corpus to text file
         print('Printing corpus...')
         with open('corpus.txt', mode='w', encoding='utf8') as outFile:
@@ -93,9 +93,9 @@ class Food2Vec:
                 negative=15,
                 iter=30
             )
-        
+
         # no file extension necessary
-        model.save(f'{self.tag}_word2vec')
+        model.save(self.tag)
         # delete corpus.txt (not useful anymore)
         os.remove('corpus.txt')
         print('Model saved!')

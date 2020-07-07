@@ -3,7 +3,7 @@ from paiper.classifier import Classifier
 from paiper.scraper.elsevier import ElsevierScraper
 from paiper.scraper.springer import SpringerScraper
 from paiper.scraper.pubmed import PubmedScraper
-from word2vec import Food2Vec # consider renaming word2vec.py to food2vec.py
+from paiper.food2vec import Food2Vec # consider renaming word2vec.py to food2vec.py
 import argparse
 import os
 
@@ -22,7 +22,7 @@ def main():
     parser.add_argument('-s', '--springer', action='store_true', help='queries Springer Nature database')
     parser.add_argument('-p', '--pubmed', action='store_true', help='queries PubMed database')
     parser.add_argument('-e', '--elsevier', action='store_true', help='queries Elsevier database')
-    parser.add_argument('-w', '--word2vec_train', action='store_true', help='trains word2vec models')
+    parser.add_argument('-m', '--food2vec', action='store_true', help='trains word2vec models')
     args = parser.parse_args()
 
     # LOAD TRAINING DATA
@@ -78,14 +78,14 @@ def main():
             elsevier = ElsevierScraper(classifiers, collection=args.collection)
             elsevier.scrape(args.query)
 
-    
+
     # food2vec_model.update_abstracts() --> don't need to run this since scrapers were updated
     food2vec_models = [Food2Vec('gabby'), Food2Vec('matthew')]
-    
+
     # RUN WORD2VEC
-    if args.word2vec_train:
+    if args.food2vec:
         food2vec_models[0].train_model()
-        # food2vec_models[1].train_model()
+        food2vec_models[1].train_model()
     else:
         food2vec_models[0].load_model()
         food2vec_models[1].load_model()
