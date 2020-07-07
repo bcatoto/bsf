@@ -105,7 +105,7 @@ class Classifier:
         self._vectorizer = vectorizer
         self._model = model
 
-    def load_vectorizer(self, vectorizer_name):
+    def load_vectorizer(self):
         """
         Loads given vectorizer from vectorizer folder
         :param vectorizer_name: name of vectorizer to load into Classifier
@@ -114,7 +114,7 @@ class Classifier:
         with open(filename, 'rb') as file:
             self._vectorizer = pickle.load(file)
 
-    def load_model(self, model_name):
+    def load_model(self):
         """
         Loads given model from models folder
         :param model_name: name of model to load into Classifier
