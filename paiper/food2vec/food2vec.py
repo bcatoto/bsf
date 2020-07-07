@@ -22,8 +22,10 @@ class Food2Vec:
 
     def train_model(self, save=True):
         """
-        Trains word2vec model for given tag
+        Trains word2vec model based on dataset of tag
+        :param save: default True, Bool flag to pickle the trained model
         """
+        # gets only processed abstracts from database
         print('Getting articles...')
         articles = list(self._collection.find(
             { 'tags': self.tag },
@@ -34,7 +36,7 @@ class Food2Vec:
             abstracts.append(article['processed_abstract'])
         sentences = '\n'.join(abstracts)
 
-        # writes out corpus to text file
+        # writes corpus to text file
         print('Printing corpus...')
         with open(CORPUS_PATH, mode='w', encoding='utf8') as outFile:
             outFile.write(sentences)
@@ -69,20 +71,22 @@ class Food2Vec:
 
     def most_similar(self, term, topn=1):
         """
-        Return terms most similar to query
+        Returns terms most similar to query
         :param term: term to compare similarity to
         :topn: default to 1, number of terms returned in order of most similar
         """
         similar = self._model.wv.most_similar(term, topn=topn)
-        
+
         print(f'Model: {self.tag}, Term: {term}')
         for result in similar:
             print(f'\t{result[0]}, {result[1]}')
 
     def analogy(self, term, same, opposite, topn=1):
         """
-        Return terms most similar to query
-        :param term: term to compare similarity to
+        Returns terms analogy based on given pair analogy
+        :param term: term to find analogy to
+        :param same: term in given pair analogy that term is similar to
+        :param opposite: term in given pair analogy that analogy is looking for
         :topn: default to 1, number of terms returned in order of most similar
         """
         analogy = self._model.wv.most_similar(

@@ -26,16 +26,15 @@ class Classifier:
     def train_model(self, training_size=0.8, random_state=5, save=True, doc2vec=False):
         """
         Trains Classifier based on set of relevant and irrelevant article abstracts
-        (from MongoDB database)
         Features: preprocessed abstracts (in vector form)
         Values: relevant (1) or irrelevant (0)
 
-        :param training_size: percentage of articles to go in training set,
-        remainder will go in testing set
-        :param random_state: controls random number generator of training and
-        testing set splitter
-        :param save: Bool flag to pickle the trained model (save for use later)
-        :param doc2vec: Bool flag to use doc2vec instead of tf-idf
+        :param training_size: default 0.8, percentage of articles to go in
+        training set, remainder will go in testing set
+        :param random_state: default 5, controls random number generator of
+        training and testing set splitter
+        :param save: default True, Bool flag to pickle the trained model
+        :param doc2vec: default False, Bool flag to use doc2vec
         """
         # queries relevant collection of MongoDB database
         collection = MongoClient(DATABASE_URL).classifier[self.tag]
