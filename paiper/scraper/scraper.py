@@ -17,6 +17,8 @@ class Scraper:
         Initializes classifiers and collection
         :param classifiers: model to determine relevance of abstract
         :param collection: defaults to 'all', collection to store abstracts in
+        :param save_all: defaults to False, Bool flag to save all articles from query (rather than only those marked relevant)
+        :param gen_tag: defaults to 'food science', name of tag to apply to all articles (required only if save_all is True)
         """
         self._classifiers = classifiers
         self._collection = self.db[collection]
@@ -25,6 +27,11 @@ class Scraper:
         print(f'Collection: {collection}')
 
     def _get_id(self, data, key):
+        """
+        Gets value of id from json or returns None if id doesn't exist
+        :param data: dictionary to get data from
+        :param key: dictionary key
+        """
         try:
             return data[key]
         except KeyError:
@@ -32,9 +39,8 @@ class Scraper:
 
     def _save_all(self, articles, doi):
         """
-        Stores all articles from database query under general tag
+        Stores all articles from database query (regardless of classifier result) under general tag
         :param articles: list of article objects to add to database
-        :param abstracts: list of processed abstracts to be checked against classifier
         :param doi: Bool flag for whether stored IDs are DOI
         """
         total = len(articles)
@@ -44,7 +50,7 @@ class Scraper:
 
         requests = []
 
-        # creates request to stor article with corresponding tag
+        # creates request to store article with corresponding tag
         for article in articles:
             id = article['doi'] if doi else article['uid']
 
@@ -119,10 +125,11 @@ class Scraper:
             requests = []
             irrelevant = 0
 
-            # creates request to stor article with corresponding tag
+            # creates request to store article with corresponding tag
             for i, article in enumerate(articles):
                 id = article['doi'] if doi else article['uid']
 
+                # if article is marked as relevant, store metadata
                 if predictions[i]:
                     # inserts new document if it does not exist
                     requests.append(UpdateOne(
@@ -155,6 +162,7 @@ class Scraper:
                         },
                         { '$push': { 'tags': classifier.tag } }
                     ))
+                # ignore irrelevant articles, but keep track of their number
                 else:
                     irrelevant += 1
                 bar.next()
@@ -174,6 +182,7 @@ class Scraper:
             print(f'Ignored {total - relevant - irrelevant} articles already tagged as \'{classifier.tag}\'.')
             print()
 
+        # if flag is marked True, store all articles from query to database (ignore classification filter)
         if self._save:
             self._save_all(articles, doi)
 
@@ -187,7 +196,7 @@ class Scraper:
     def set_collection(self, collection):
         """
         Sets collection
-        :param collection: collection to store abstracts and metadata in in
+        :param collection: collection to store abstracts and metadata in
         """
         self._collection = db[collection]
         print(f'Collection: {collection}')
