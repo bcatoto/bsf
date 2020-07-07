@@ -8,76 +8,99 @@ import os
 
 DATABASE_URL = os.environ.get('DATABASE_URL', 'Database url doesn\'t exist')
 
-def main():
-    # CONVERTS ALL PROCESSED ABSTRACTS IN DATABASE SO THEY ARE SEGMENTED BY
-    # SENTENCES
-    collection = MongoClient(DATABASE_URL).abstracts.all
-    processor = MaterialsTextProcessor()
-    nlp = spacy.load('en_core_web_sm')
+class Food2Vec:
 
-    print('Getting abstracts...')
-    articles = list(collection.find({}, { 'abstract': 1 }))
+    def __init__(self, tag):
+        """
+        Initializes collection
+        :param tag: name of tag to filter articles for model training
+        """
+        self.tag = tag
+        self._collection = MongoClient(DATABASE_URL).abstracts.all
 
-    bar = ChargingBar(f'Updating abstracts:', max=len(articles), suffix='%(index)d of %(max)d')
+    def update_abstracts(self):
+        """
+        Converts processed abstracts in database so that they are segmented by sentence
+        """
+        processor = MaterialsTextProcessor()
+        nlp = spacy.load('en_core_web_sm')
 
-    requests = []
-    delete = []
-    for article in articles:
-        doc = nlp(article['abstract'])
+        print('Getting abstracts...')
+        articles = list(self._collection.find({}, { 'abstract': 1 }))
 
-        sents = []
-        for sent in doc.sents:
-            try:
-                tokens, materials = processor.process(sent.text)
-            except OverflowError:
-                requests.append(DeleteOne({ '_id': article['_id'] }))
-                continue
+        # charging bar
+        bar = ChargingBar(f'Updating abstracts:', max=len(articles), suffix='%(index)d of %(max)d')
 
-            processed_sent = ' '.join(tokens)
-            sents.append(processed_sent)
+        requests = []
+        delete = []
 
-        processed_abstract = '\n'.join(sents)
+        for article in articles:
+            doc = nlp(article['abstract'])
 
-        # modifies existing document to include tag
-        requests.append(UpdateOne(
-            { '_id' : article['_id'] },
-            { '$set': { 'processed_abstract': processed_abstract } }
-        ))
-        bar.next()
-    bar.finish()
+            # rebuild each sentence by applying Mat2Vec tokenizer and joining tokens with spaces
+            sents = []
+            for sent in doc.sents:
+                try:
+                    tokens, materials = processor.process(sent.text)
+                except OverflowError:
+                    requests.append(DeleteOne({ '_id': article['_id'] }))
+                    continue
 
-    print(f'Updating collection...')
-    if requests:
-        mongo = collection.bulk_write(requests)
-        print(f'Modified: {mongo.modified_count}.')
+                processed_sent = ' '.join(tokens)
+                sents.append(processed_sent)
 
-    # articles = list(collection.find({ 'tags': 'matthew' }))
-    #
-    # abstracts = []
-    # print('Getting articles...')
-    # for article in articles:
-    #     abstracts.append(article['processed_abstract'])
-    #
-    # sentences = '\n'.join(abstracts)
-    #
-    # # writes out corpus to text file
-    # print('Printing corpus...')
-    # outFile = open('corpus.txt', mode='w', encoding='ISO-8859-1')
-    # outFile.write(sentences)
-    # outFile.close()
-    #
-    # sentences = LineSentence(sentences)
-    #
-    # model = Word2Vec(
-    #     sentences,
-    #     window=8,
-    #     min_count=5,
-    #     workers=16,
-    #     negative=15,
-    #     iter=30
-    # )
-    # model.save("word2vec.model")
+            # ensure that each sentence is on a new line (required for Word2Vec)
+            processed_abstract = '\n'.join(sents)
+
+            # modifies existing document to include tag
+            requests.append(UpdateOne(
+                { '_id' : article['_id'] },
+                { '$set': { 'processed_abstract': processed_abstract } }
+            ))
+            bar.next()
+        bar.finish()
+
+        # update MongoDB
+        print(f'Updating collection...')
+        if requests:
+            mongo = self._collection.bulk_write(requests)
+            print(f'Modified: {mongo.modified_count}.')
 
 
-if __name__ == '__main__':
-    main()
+    def train_model(self):
+        """
+        Trains word2vec model for given tag
+        """
+        articles = list(self._collection.find({'tags': 'matthew' }))
+        abstracts = []
+        print('Getting articles...')
+        for article in articles:
+            abstracts.append(article['processed_abstract'])
+        sentences = '\n'.join(abstracts)
+        
+        # writes out corpus to text file
+        print('Printing corpus...')
+        with open('corpus.txt', mode='r+', encoding='utf8') as outFile:
+            outFile.write(sentences)
+            print('Training model. This could take a while...')
+            sentences = LineSentence(outFile)
+            model = Word2Vec(
+                sentences,
+                window=8,
+                min_count=5,
+                workers=16,
+                negative=15,
+                iter=30
+            )
+        
+        # no file extension necessary
+        model.save(f'{self.tag}_word2vec')
+        print('Model saved!')
+
+    def load_model(self):
+        """
+        Loads the specific word2vec model for given tag and prints similarity (change this later)
+        """
+        print(f'Loading model: {self.tag}...')
+        model = Word2Vec.load(f'{self.tag}_word2vec')
+        print('Similarity of \'flavor\' and \'food\':', model.similarity('flavor', 'food'))
