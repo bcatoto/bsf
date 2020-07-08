@@ -25,7 +25,6 @@ def main():
     parser.add_argument('-e', '--elsevier', action='store_true', help='scrapes Elsevier database')
     parser.add_argument('-f', '--food2vec', action='store_true', help='initializes word2vec models')
     parser.add_argument('-t', '--train', action='store_true', help='trains word2vec models')
-
     args = parser.parse_args()
 
     # load training data
@@ -81,20 +80,25 @@ def main():
 
     # run word2vec
     if args.food2vec:
-        models = [Food2Vec('gabby'), Food2Vec('matthew')]
+        models = [Food2Vec('gabby', collection=args.collection)]
         for model in models:
             if args.train:
                 model.train_model()
             else:
                 model.load_model()
+                model.load_phraser()
 
             # similarity
+            model.most_similar('flavor compounds', topn=5)
             model.most_similar('flavor', topn=5)
             model.most_similar('beef', topn=5)
-            model.most_similar('duck', topn=5)
+            model.most_similar('duck meat', topn=5)
             model.most_similar('lamb', topn=5)
 
             # analogy
+            model.analogy('pig', 'cow', 'beef')
+            model.analogy('chicken', 'cow', 'beef')
+            model.analogy('chicken', 'pig', 'pork')
             model.analogy('soy', 'beef', 'hemoglobin')
 
 if __name__ == '__main__':
