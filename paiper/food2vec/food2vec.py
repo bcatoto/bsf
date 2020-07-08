@@ -1,10 +1,12 @@
 from paiper.processor import MaterialsTextProcessor
 from pymongo import MongoClient, UpdateOne, DeleteOne
 from gensim.models import Word2Vec
+from gensim.models.word2vec import FAST_VERSION as FastVersion
 from gensim.models.phrases import Phrases, Phraser
 from progress.bar import ChargingBar
 import regex
 import os
+import multiprocessing
 
 DATABASE_URL = os.environ.get('DATABASE_URL', 'Database url doesn\'t exist')
 MODELS_PATH = os.path.join(os.path.dirname(__file__), 'models')
@@ -82,6 +84,9 @@ class Food2Vec:
         :param min_count: defaults to 10, minimum number of occurrences for phrase to be considered
         :param threshold: defaults to 15.0, phrase importance threshold
         """
+        # ensure that C version is being used
+        assert(FastVersion > -1)
+
         # gets only processed abstracts from database
         print('Getting articles...')
         articles = list(self._collection.find(
@@ -110,12 +115,13 @@ class Food2Vec:
             self._phraser = phraser
 
         # train word2vec model
+        cores = multiprocessing.cpu_count()
         print('Training Word2Vec model...')
         model = Word2Vec(
             sentences,
             window=8,
             min_count=5,
-            workers=16,
+            workers=cores,
             negative=15,
             iter=30
         )
