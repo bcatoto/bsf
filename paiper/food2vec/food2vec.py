@@ -1,4 +1,5 @@
-from pymongo import MongoClient
+from paiper.processor import MaterialsTextProcessor
+from pymongo import MongoClient, UpdateOne, DeleteOne
 from gensim.models import Word2Vec
 from gensim.models.word2vec import LineSentence
 from progress.bar import ChargingBar
@@ -15,7 +16,6 @@ class Food2Vec:
         """
         Initializes collection
         :param tag: name of tag to filter articles for model training
-        :param collection: defaults to 'all', collection to store/load abstracts from
         """
         self.tag = tag
         self._collection = MongoClient(DATABASE_URL).abstracts[collection]
@@ -31,35 +31,28 @@ class Food2Vec:
             { 'tags': self.tag },
             { 'processed_abstract' : 1, '_id': 0 }
         ))
-        abstracts = []
+        sentences = []
         for article in articles:
-            abstracts.append(article['processed_abstract'])
-        sentences = '\n'.join(abstracts)
+            abstract = article['processed_abstract'].split('\n')
+            sentences += [sent.split(' ') for sent in abstract]
 
-        # writes corpus to text file
-        print('Printing corpus...')
-        with open(CORPUS_PATH, mode='w', encoding='utf8') as outFile:
-            outFile.write(sentences)
-
-        # trains word2vec model
-        with open(CORPUS_PATH, mode='r') as inFile:
-            print('Training model...')
-            sentences = LineSentence(inFile)
-            model = Word2Vec(
-                sentences,
-                window=8,
-                min_count=5,
-                workers=16,
-                negative=15,
-                iter=30
-            )
-        os.remove(CORPUS_PATH)
+        # train word2vec model
+        print('Training model...')
+        model = Word2Vec(
+            sentences,
+            window=8,
+            min_count=5,
+            workers=16,
+            negative=15,
+            iter=30
+        )
 
         # saves model
         if save:
             model.save(os.path.join(MODELS_PATH, self.tag))
-            print('Model saved.')
         self._model = model
+
+        print('Model saved.')
 
     def load_model(self):
         """
@@ -72,7 +65,7 @@ class Food2Vec:
         """
         Returns terms most similar to query
         :param term: term to compare similarity to
-        :param topn: default to 1, number of terms returned in order of most similar
+        :topn: default to 1, number of terms returned in order of most similar
         """
         similar = self._model.wv.most_similar(term, topn=topn)
 
@@ -86,7 +79,7 @@ class Food2Vec:
         :param term: term to find analogy to
         :param same: term in given pair analogy that term is similar to
         :param opposite: term in given pair analogy that analogy is looking for
-        :param topn: default to 1, number of terms returned in order of most similar
+        :topn: default to 1, number of terms returned in order of most similar
         """
         analogy = self._model.wv.most_similar(
             positive=[opposite, term],
