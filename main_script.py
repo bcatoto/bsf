@@ -86,8 +86,8 @@ def main():
                 model.train_model()
             else:
                 model.load_model()
-                model.load_phraser()
-
+            
+            model.load_phraser()
             # similarity
             model.most_similar('flavor compounds', topn=5)
             model.most_similar('flavor', topn=5)
