@@ -14,7 +14,7 @@ def main():
     parser = argparse.ArgumentParser(description='Scrape abstracts')
     parser.add_argument('-l', '--load', action='store_true', help='loads training data into database')
     parser.add_argument('-c', '--classifier', action='store_true', help='trains classifiers')
-    parser.add_argument('-k', '--keywords', action='store_true', help='opens keywords.txt and scrapes for each keyword, one at a time')
+    parser.add_argument('--keywords', type=str, help='opens text file of keywords and scrapes for each keyword')
     parser.add_argument('--query', type=str, default='', help='database query (requires quotation marks)')
     parser.add_argument('--subject', type=str, default='', help='Springer Nature subject query (requires quotation marks)')
     parser.add_argument('--collection', type=str, default='all', help='collection to store scraped abstracts in')
@@ -47,10 +47,12 @@ def main():
 
     # read queries from keywords.txt
     if args.keywords:
-        print('Loading keywords from file...')
+        print(f'Loading keywords from \'{args.keywords}\' file...')
+
         keywords = []
-        with open(KEYWORDS_PATH, 'r') as queries:
+        with open(os.path.join(KEYWORDS_PATH, f'{args.keywords}.txt'), 'r') as queries:
             keywords = [word.strip() for word in queries]
+            
         for keyword in keywords:
             if args.springer:
                 springer = SpringerScraper(classifiers, collection=args.collection, save_all=args.store)
