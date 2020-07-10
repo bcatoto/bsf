@@ -128,17 +128,24 @@ class ElsevierScraper(Scraper):
                 # segments abstract by sentence
                 doc = self.nlp(abstract)
                 sentences = []
+                is_unreadable = False
+
                 for sent in doc.sents:
                     # processes sentence text using processor from mat2vec
                     try:
                         tokens, materials = self.processor.process(sent.text)
                     except OverflowError:
-                        bar.next()
-                        unreadable_papers += 1
-                        continue
+                        is_unreadable = True
+                        break
 
                     processed_sent = ' '.join(tokens)
                     sentences.append(processed_sent)
+
+                # if processor (from above) throws an error, skip the paper
+                if is_unreadable:
+                    bar.next()
+                    unreadable_papers += 1
+                    continue
 
                 processed_abstract = '\n'.join(sentences)
 

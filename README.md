@@ -66,6 +66,13 @@ If packages have been changed upstream, you can update your local environment wi
 
 If you experience issues with finding the location of your virtual environment, you can use `pipenv --py` to access its path and use it directly in code editors like VSCode and Atom.
 
+To change your pipenv python version, change the python version specified in the Pipfile and run the following commands:
+```
+pipenv shell
+pipenv --rm
+pipenv lock
+pipenv install
+```
 
 ## Acknowledgements
 This project was inspired by the work of Tshitoyan et al. in [Unsupervised word embeddings capture latent knowledge from materials science literature](https://github.com/materialsintelligence/mat2vec). We utilized their processor `process.py` on the paper abstracts to improve the classifier's accuracy.
