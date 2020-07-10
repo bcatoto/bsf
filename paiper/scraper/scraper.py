@@ -71,20 +71,11 @@ class Scraper:
                         'eissn': article['eissn'],
                         'publication_date': article['publication_date'],
                         'database': article['database'],
-                        'processed_abstract': article['processed_abstract'],
-                        'tags': [self._gen_tag]
+                        'processed_abstract': article['processed_abstract']
                     },
+                    '$addToSet': { 'tags': self._gen_tag }
                 },
                 upsert=True
-            ))
-
-            # modifies existing document to include tag
-            requests.append(UpdateOne(
-                {
-                    'doi' if doi else 'uid': id,
-                    'tags': { '$ne' : self._gen_tag }
-                },
-                { '$push': { 'tags': self._gen_tag } }
             ))
 
             bar.next()
@@ -95,14 +86,8 @@ class Scraper:
         if requests:
             start = time.perf_counter()
             mongo = self._collection.bulk_write(requests, ordered=False)
-            time = start - time.perf_counter()
-            print(f'Bulk write operation time (unordered): {int(time / 60)}m{time % 60}s')
-
-            start = time.perf_counter()
-            mongo = self._collection.bulk_write(requests)
-            time = start - time.perf_counter()
-            print(f'Bulk write operation time (ordered): {int(time / 60)}m{time % 60}s')
-            print()
+            elapsed = start - time.perf_counter()
+            print(f'Bulk write operation time: {int(elapsed / 60)}m{elapsed % 60:0.2f}s')
 
         # calculates how many new relevant articles were added
         new = mongo.upserted_count + mongo.modified_count if mongo else 0
@@ -139,11 +124,11 @@ class Scraper:
             for i, article in enumerate(articles):
                 id = article['doi'] if doi else article['uid']
 
-                # if article is marked as relevant, store metadata
+                # if article is marked as relevant, inserts new document if it
+                # does not exist and adds to tag
                 if predictions[i]:
-                    # inserts new document if it does not exist
                     requests.append(UpdateOne(
-                        { 'doi' if doi else 'uid': id, },
+                        { 'doi' if doi else 'uid': id },
                         {
                             '$setOnInsert': {
                                 'doi': article['doi'],
@@ -157,21 +142,13 @@ class Scraper:
                                 'eissn': article['eissn'],
                                 'publication_date': article['publication_date'],
                                 'database': article['database'],
-                                'processed_abstract': article['processed_abstract'],
-                                'tags': [ classifier.tag ]
+                                'processed_abstract': article['processed_abstract']
                             },
+                            '$addToSet': { 'tags': classifier.tag }
                         },
                         upsert=True
                     ))
 
-                    # modifies existing document to include tag
-                    requests.append(UpdateOne(
-                        {
-                            'doi' if doi else 'uid': id,
-                            'tags': { '$ne' : classifier.tag }
-                        },
-                        { '$push': { 'tags': classifier.tag } }
-                    ))
                 # ignore irrelevant articles, but keep track of their number
                 else:
                     irrelevant += 1
@@ -184,13 +161,7 @@ class Scraper:
                 start = time.perf_counter()
                 mongo = self._collection.bulk_write(requests, ordered=False)
                 elapsed = start - time.perf_counter()
-                print(f'Bulk write operation time (unordered): {int(elapsed / 60)}m{elapsed % 60:0.2f}s')
-
-                start = time.perf_counter()
-                mongo = self._collection.bulk_write(requests)
-                elapsed = start - time.perf_counter()
-                print(f'Bulk write operation time (ordered): {int(elapsed / 60)}m{elapsed % 60:0.2f}s')
-                print()
+                print(f'Bulk write operation time: {int(elapsed / 60)}m{elapsed % 60:0.2f}s')
 
             # calculates how many new relevant articles were added
             relevant = mongo.upserted_count + mongo.modified_count if mongo else 0
