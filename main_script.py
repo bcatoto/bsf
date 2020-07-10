@@ -7,7 +7,7 @@ from paiper.food2vec import Food2Vec
 import argparse
 import os
 
-KEYWORDS_PATH = os.path.join(os.path.dirname(__file__), 'paiper/scraper/keywords/keywords.txt')
+KEYWORDS_PATH = os.path.join(os.path.dirname(__file__), 'paiper/scraper/keywords')
 
 def main():
     # set up parser
