@@ -3,6 +3,7 @@ from paiper.processor import MaterialsTextProcessor
 from paiper.classifier import Classifier
 from progress.bar import ChargingBar
 import spacy
+import time
 import os
 
 DATABASE_URL = os.environ.get('DATABASE_URL', 'Database url doesn\'t exist')
@@ -92,7 +93,16 @@ class Scraper:
         # updates database
         print(f'Updating collection...')
         if requests:
+            start = time.perf_counter()
+            mongo = self._collection.bulk_write(requests, ordered=False)
+            time = start - time.perf_counter()
+            print(f'Bulk write operation time (unordered): {int(time / 60)}m{time % 60}s')
+
+            start = time.perf_counter()
             mongo = self._collection.bulk_write(requests)
+            time = start - time.perf_counter()
+            print(f'Bulk write operation time (ordered): {int(time / 60)}m{time % 60}s')
+            print()
 
         # calculates how many new relevant articles were added
         new = mongo.upserted_count + mongo.modified_count if mongo else 0
@@ -171,7 +181,16 @@ class Scraper:
             # updates database
             print(f'Updating collection...')
             if requests:
+                start = time.perf_counter()
+                mongo = self._collection.bulk_write(requests, ordered=False)
+                elapsed = start - time.perf_counter()
+                print(f'Bulk write operation time (unordered): {int(elapsed / 60)}m{elapsed % 60:0.2f}s')
+
+                start = time.perf_counter()
                 mongo = self._collection.bulk_write(requests)
+                elapsed = start - time.perf_counter()
+                print(f'Bulk write operation time (ordered): {int(elapsed / 60)}m{elapsed % 60:0.2f}s')
+                print()
 
             # calculates how many new relevant articles were added
             relevant = mongo.upserted_count + mongo.modified_count if mongo else 0

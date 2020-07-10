@@ -52,7 +52,7 @@ def load_articles():
         # stores new articles
         print(f'Updating collection...')
         if requests:
-            mongo = collection.bulk_write(requests)
+            mongo = collection.bulk_write(requests, ordered=False)
 
         print(f'Total stored in \'{name}\': {mongo.upserted_count}')
         print(f'Already stored in \'{name}\': {mongo.matched_count}')
