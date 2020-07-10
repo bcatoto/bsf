@@ -85,7 +85,7 @@ class Food2Vec:
         :param threshold: defaults to 15.0, phrase importance threshold
         """
         # ensure that C version is being used
-        assert(FastVersion > -1)
+        assert FastVersion > -1
 
         # gets only processed abstracts from database
         print('Getting articles...')

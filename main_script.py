@@ -25,7 +25,7 @@ def main():
     parser.add_argument('-e', '--elsevier', action='store_true', help='scrapes Elsevier database')
     parser.add_argument('-f', '--food2vec', action='store_true', help='initializes word2vec models')
     parser.add_argument('-t', '--train', action='store_true', help='trains word2vec models')
-    parser.add_argument('--similar', type=str, default=None, help='food2vec model similarity query (requires quotation marks)')
+    parser.add_argument('--similar', type=str, default='', help='food2vec model similarity query (requires quotation marks)')
     args = parser.parse_args()
 
     # load training data
