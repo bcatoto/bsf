@@ -17,7 +17,7 @@ def main():
     parser.add_argument('--keywords', type=str, help='opens text file of keywords and scrapes for each keyword')
     parser.add_argument('--query', type=str, default='', help='database query (requires quotation marks)')
     parser.add_argument('--subject', type=str, default='', help='Springer Nature subject query (requires quotation marks)')
-    parser.add_argument('--collection', type=str, default='all', help='collection to store scraped abstracts in')
+    parser.add_argument('--collection', type=str, default='sample', help='collection to store scraped abstracts in')
     parser.add_argument('-o', '--store', action='store_true', help='stores all scraped abstracts in general tag')
     parser.add_argument('-a', '--all', action='store_true', help='scrapes all databases')
     parser.add_argument('-s', '--springer', action='store_true', help='scrapes Springer Nature database')
@@ -48,20 +48,23 @@ def main():
     # read queries from keywords.txt
     if args.keywords:
         print(f'Loading keywords from \'{args.keywords}\' file...')
+        print()
 
         keywords = []
         with open(os.path.join(KEYWORDS_PATH, f'{args.keywords}.txt'), 'r') as queries:
             keywords = [word.strip() for word in queries]
-            
+
+        # initialize each scraper once rather than after each keyword
+        springer = SpringerScraper(classifiers, collection=args.collection, save_all=args.store)
+        pubmed = PubmedScraper(classifiers, collection=args.collection, save_all=args.store)
+        elsevier = ElsevierScraper(classifiers, collection=args.collection, save_all=args.store)
+
         for keyword in keywords:
             if args.springer:
-                springer = SpringerScraper(classifiers, collection=args.collection, save_all=args.store)
                 springer.scrape(subject=args.subject, keyword=keyword)
             if args.pubmed:
-                pubmed = PubmedScraper(classifiers, collection=args.collection, save_all=args.store)
                 pubmed.scrape(keyword)
             if args.elsevier:
-                elsevier = ElsevierScraper(classifiers, collection=args.collection, save_all=args.store)
                 elsevier.scrape(keyword)
 
     # use query from command line

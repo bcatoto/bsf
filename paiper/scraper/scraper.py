@@ -1,7 +1,6 @@
 from pymongo import MongoClient, UpdateOne
 from paiper.processor import MaterialsTextProcessor
 from paiper.classifier import Classifier
-from progress.bar import ChargingBar
 import spacy
 import time
 import os
@@ -13,11 +12,11 @@ class Scraper:
     nlp = spacy.load('en_core_web_sm')
     processor = MaterialsTextProcessor()
 
-    def __init__(self, classifiers, collection='all', save_all=False, gen_tag='food science'):
+    def __init__(self, classifiers, collection, save_all=False, gen_tag='food science'):
         """
         Initializes classifiers and collection
         :param classifiers: model to determine relevance of abstract
-        :param collection: defaults to 'all', collection to store abstracts in
+        :param collection: collection to store abstracts in
         :param save_all: defaults to False, Bool flag to save all articles from query (rather than only those marked relevant)
         :param gen_tag: defaults to 'food science', name of tag to apply to all articles (required only if save_all is True)
         """
@@ -25,6 +24,7 @@ class Scraper:
         self._collection = self.db[collection]
         self._save = save_all
         self._gen_tag = gen_tag
+        self._gen_new = 0
         print(f'Collection: {collection}')
 
     def _get_id(self, data, key):
@@ -46,12 +46,8 @@ class Scraper:
         """
         total = len(articles)
 
-        # progress bar
-        bar = ChargingBar(f'Storing all new papers to \'{self._gen_tag}\':', max=total, suffix='%(index)d of %(max)d')
-
-        requests = []
-
         # creates request to store article with corresponding tag
+        requests = []
         for article in articles:
             id = article['doi'] if doi else article['uid']
 
@@ -78,22 +74,13 @@ class Scraper:
                 upsert=True
             ))
 
-            bar.next()
-        bar.finish()
-
         # updates database
-        print(f'Updating collection...')
         if requests:
             start = time.perf_counter()
             mongo = self._collection.bulk_write(requests, ordered=False)
             elapsed = start - time.perf_counter()
             print(f'Bulk write operation time: {int(elapsed / 60)}m{elapsed % 60:0.2f}s')
-
-        # calculates how many new relevant articles were added
-        new = mongo.upserted_count + mongo.modified_count if mongo else 0
-
-        print(f'Total articles analyzed: {total}.')
-        print(f'Stored {new} new abstracts to \'{self._gen_tag}\'.')
+            self._gen_new += mongo.upserted_count + mongo.modified_count if mongo else 0
 
     def _store(self, articles, abstracts, doi=True):
         """
@@ -103,24 +90,16 @@ class Scraper:
         :param abstracts: list of processed abstracts to be checked against classifier
         :param doi: Bool flag for whether stored IDs are DOI
         """
-        # if no abstracts to store, exit
-        if not abstracts:
-            print('No abstracts to classify\n')
-            return
-
         total = len(abstracts)
 
         for classifier in self._classifiers:
-            # progress bar
-            bar = ChargingBar(f'Classifying papers relevant to \'{classifier.tag}\':', max=total, suffix='%(index)d of %(max)d')
+            classifier.total += total
 
             # uses classifier to determine if relevant
             predictions = classifier.predict(abstracts)
 
-            requests = []
-            irrelevant = 0
-
             # creates request to store article with corresponding tag
+            requests = []
             for i, article in enumerate(articles):
                 id = article['doi'] if doi else article['uid']
 
@@ -151,26 +130,15 @@ class Scraper:
 
                 # ignore irrelevant articles, but keep track of their number
                 else:
-                    irrelevant += 1
-                bar.next()
-            bar.finish()
+                    classifier.irrelevant += 1
 
             # updates database
-            print(f'Updating collection...')
             if requests:
                 start = time.perf_counter()
                 mongo = self._collection.bulk_write(requests, ordered=False)
                 elapsed = start - time.perf_counter()
                 print(f'Bulk write operation time: {int(elapsed / 60)}m{elapsed % 60:0.2f}s')
-
-            # calculates how many new relevant articles were added
-            relevant = mongo.upserted_count + mongo.modified_count if mongo else 0
-
-            print(f'Total articles analyzed: {total}.')
-            print(f'Stored {relevant} new abstracts relevant to \'{classifier.tag}\'.')
-            print(f'Ignored {irrelevant} abstracts irrelevant to \'{classifier.tag}\'.')
-            print(f'Ignored {total - relevant - irrelevant} articles already tagged as \'{classifier.tag}\'.')
-            print()
+                classifier.relevant += mongo.upserted_count + mongo.modified_count if mongo else 0
 
         # if flag is marked True, store all articles from query to database (ignore classification filter)
         if self._save:

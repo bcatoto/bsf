@@ -1,4 +1,3 @@
-from paiper.processor import MaterialsTextProcessor
 from pymongo import MongoClient, UpdateOne, DeleteOne
 from gensim.models import Word2Vec
 from gensim.models.word2vec import FAST_VERSION as FastVersion
@@ -94,7 +93,7 @@ class Food2Vec:
             { 'processed_abstract' : 1, '_id': 0 }
         ))
         print(f'Number of articles: {len(articles)}.')
-        
+
         sentences = []
         for article in articles:
             abstract = article['processed_abstract'].split('\n')
