@@ -12,11 +12,11 @@ class Scraper:
     nlp = spacy.load('en_core_web_sm')
     processor = MaterialsTextProcessor()
 
-    def __init__(self, classifiers, collection='all', save_all=False, gen_tag='food science'):
+    def __init__(self, classifiers, collection, save_all=False, gen_tag='food science'):
         """
         Initializes classifiers and collection
         :param classifiers: model to determine relevance of abstract
-        :param collection: defaults to 'all', collection to store abstracts in
+        :param collection: collection to store abstracts in
         :param save_all: defaults to False, Bool flag to save all articles from query (rather than only those marked relevant)
         :param gen_tag: defaults to 'food science', name of tag to apply to all articles (required only if save_all is True)
         """

@@ -172,6 +172,7 @@ class ElsevierScraper(Scraper):
             bar.next()
 
             # classify abstracts if 20000 have been stored
+            # note: this condition will never be met due to article scraping limit set above
             if len(abstracts) == 20000:
                 self._store(articles, abstracts)
                 articles = []
