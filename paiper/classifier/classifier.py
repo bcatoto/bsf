@@ -55,8 +55,6 @@ class Classifier:
         # vectorize abstracts
         # check for doc2vec option
         if doc2vec:
-            print('Testing doc2vec: to be completed')
-            print('This part currently does not function properly')
             train_docs = []
             test_docs = []
             for i, abstract in enumerate(train_abs):

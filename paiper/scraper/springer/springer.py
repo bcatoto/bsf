@@ -159,7 +159,7 @@ class SpringerScraper(Scraper):
                     bar.next()
 
                     # classify abstracts if 20000 have been stored
-                    if len(abstracts) == 50:
+                    if len(abstracts) == 20000:
                         self._store(articles, abstracts)
                         articles = []
                         abstracts = []
