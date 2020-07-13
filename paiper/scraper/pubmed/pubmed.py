@@ -74,7 +74,7 @@ class PubmedScraper(Scraper):
 
                 # updates total to total number of papers in query
                 if page == 0:
-                    total = int(soup.retmax.string)
+                    total = int(soup.count.string)
                     bar.max = total
 
                 # stores UIDs returned by query
@@ -119,7 +119,7 @@ class PubmedScraper(Scraper):
                     # segments abstract by sentence
                     doc = self.nlp(abstract)
                     sentences = []
-                    is_unreadable = False 
+                    is_unreadable = False
 
                     for sent in doc.sents:
                         # processes sentence text using processor from mat2vec
