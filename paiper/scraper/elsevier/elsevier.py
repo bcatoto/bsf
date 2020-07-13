@@ -99,7 +99,11 @@ class ElsevierScraper(Scraper):
         # metadata
         articles = []
         abstracts = []
-        unreadable_papers = 0
+        unreadable = 0
+
+        if not dois:
+            print('No abstracts to classify.\n')
+            return
 
         # progress bar
         bar = ChargingBar('Getting metadata:', max = len(dois), suffix = '%(index)d of %(max)d')
@@ -112,7 +116,7 @@ class ElsevierScraper(Scraper):
                 try:
                     data = json.loads(response.content)['full-text-retrieval-response']['coredata']
                 except json.decoder.JSONDecodeError:
-                    unreadable_papers += 1
+                    unreadable += 1
                     bar.next()
                     continue
 
@@ -121,7 +125,7 @@ class ElsevierScraper(Scraper):
 
                 # continues if paper does not have abstract
                 if not abstract:
-                    unreadable_papers += 1
+                    unreadable += 1
                     bar.next()
                     continue
 
@@ -144,7 +148,7 @@ class ElsevierScraper(Scraper):
                 # if processor (from above) throws an error, skip the paper
                 if is_unreadable:
                     bar.next()
-                    unreadable_papers += 1
+                    unreadable += 1
                     continue
 
                 processed_abstract = '\n'.join(sentences)
@@ -166,10 +170,33 @@ class ElsevierScraper(Scraper):
                 articles.append(article)
                 abstracts.append(processed_abstract)
             bar.next()
+
+            # classify abstracts if 20000 have been stored
+            if len(abstracts) == 20000:
+                self._store(articles, abstracts)
+                articles = []
+                abstracts = []
         bar.finish()
 
         # unreadable papers
-        print(f'Unreadable papers: {unreadable_papers}\n')
+        print(f'Unreadable papers: {unreadable}')
 
         # classifies and stores metadata
-        self._store(articles, abstracts)
+        if abstracts:
+            self._store(articles, abstracts)
+            print()
+        else:
+            print('No abstracts to classify.\n')
+            return
+
+        # prints classifier metrics
+        for classifier in self._classifiers:
+            classifier.print_metrics()
+            classifier.reset_metrics()
+
+        # prints general tag metrics
+        if self._save:
+            print(f'Total articles analyzed: {total - unreadable}.')
+            print(f'Stored {self._gen_new} new abstracts to \'{self._gen_tag}\'.')
+            print()
+            self._gen_new = 0

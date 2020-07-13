@@ -48,20 +48,22 @@ def main():
     # read queries from keywords.txt
     if args.keywords:
         print(f'Loading keywords from \'{args.keywords}\' file...')
+        print()
 
         keywords = []
         with open(os.path.join(KEYWORDS_PATH, f'{args.keywords}.txt'), 'r') as queries:
             keywords = [word.strip() for word in queries]
-            
+
+        springer = SpringerScraper(classifiers, collection=args.collection, save_all=args.store)
+        pubmed = PubmedScraper(classifiers, collection=args.collection, save_all=args.store)
+        elsevier = ElsevierScraper(classifiers, collection=args.collection, save_all=args.store)
+
         for keyword in keywords:
             if args.springer:
-                springer = SpringerScraper(classifiers, collection=args.collection, save_all=args.store)
                 springer.scrape(subject=args.subject, keyword=keyword)
             if args.pubmed:
-                pubmed = PubmedScraper(classifiers, collection=args.collection, save_all=args.store)
                 pubmed.scrape(keyword)
             if args.elsevier:
-                elsevier = ElsevierScraper(classifiers, collection=args.collection, save_all=args.store)
                 elsevier.scrape(keyword)
 
     # use query from command line

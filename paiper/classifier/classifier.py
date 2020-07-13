@@ -22,6 +22,7 @@ class Classifier:
         and name of document tag
         """
         self.tag = tag
+        self.reset_metrics()
 
     def train_model(self, training_size=0.8, random_state=5, doc2vec=False):
         """
@@ -126,3 +127,15 @@ class Classifier:
         """
         features = self._vectorizer.transform(abstracts)
         return self._model.predict(features)
+
+    def reset_metrics(self):
+        self.total = 0
+        self.relevant = 0
+        self.irrelevant = 0
+
+    def print_metrics(self):
+        print(f'Total articles analyzed: {self.total}.')
+        print(f'Stored {self.relevant} new abstracts relevant to \'{self.tag}\'.')
+        print(f'Ignored {self.irrelevant} abstracts irrelevant to \'{self.tag}\'.')
+        print(f'Ignored {self.total - self.relevant - self.irrelevant} articles already tagged as \'{self.tag}\'.')
+        print()

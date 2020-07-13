@@ -76,22 +76,22 @@ class SpringerScraper(Scraper):
         :param keyword: keyword constraint query, if empty does not include keyword
         constraint to query
         """
-
-        articles = []
-        abstracts = []
-        unreadable_papers = 0
-        item = 0
-        total = 100
-
         # prints subject and query made
         subject_print = subject if subject else 'None'
         keyword_print = keyword if keyword else 'None'
         print(f'Database: Springer Nature. Subject: {subject_print}, Keyword: {keyword_print}.')
 
+        articles = []
+        abstracts = []
+        unreadable = 0
+        item = 0
+        total = 100
+
         # progress bar
         bar = ChargingBar('Getting metadata:', max = total, suffix = '%(index)d of %(max)d')
 
         while item < total:
+            # builds url and queries API
             url = self._url_builder(item, subject, keyword)
             response = requests.get(url)
 
@@ -99,7 +99,7 @@ class SpringerScraper(Scraper):
                 data = json.loads(response.content)
                 records = data['records']
 
-                # updates total to number of papers in query
+                # updates total to total number of papers in query
                 if item == 0:
                     total = int(data['result'][0]['total'])
                     bar.max = total
@@ -111,15 +111,15 @@ class SpringerScraper(Scraper):
 
                     # continues if paper does not have abstract
                     if not abstract:
+                        unreadable += 1
                         bar.next()
-                        unreadable_papers += 1
                         continue
 
                     # segments abstract by sentence
                     doc = self.nlp(abstract)
                     sentences = []
-                    is_unreadable = False 
-                    
+                    is_unreadable = False
+
                     for sent in doc.sents:
                         # processes sentence text using processor from mat2vec
                         try:
@@ -127,14 +127,14 @@ class SpringerScraper(Scraper):
                         except OverflowError:
                             is_unreadable = True
                             break
-                        
+
                         processed_sent = ' '.join(tokens)
                         sentences.append(processed_sent)
-                    
+
                     # if processor (from above) throws an error, skip the paper
                     if is_unreadable:
+                        unreadable += 1
                         bar.next()
-                        unreadable_papers += 1
                         continue
 
                     processed_abstract = '\n'.join(sentences)
@@ -152,19 +152,41 @@ class SpringerScraper(Scraper):
                         'eissn': self._get_value(record, 'eIssn'),
                         'publication_date': self._get_date(self._get_value(record, 'publicationDate')),
                         'database': 'springer',
-                        'processed_abstract': processed_abstract,
-                        'tags': []
+                        'processed_abstract': processed_abstract
                     }
                     articles.append(article)
                     abstracts.append(processed_abstract)
                     bar.next()
+
+                    # classify abstracts if 20000 have been stored
+                    if len(abstracts) == 50:
+                        self._store(articles, abstracts)
+                        articles = []
+                        abstracts = []
 
             # 100 items per page, so go to next page
             item += 100
         bar.finish()
 
         # unreadable papers
-        print(f'Unreadable papers: {unreadable_papers}\n')
+        print(f'Unreadable papers: {unreadable}')
 
         # classifies and stores metadata
-        self._store(articles, abstracts)
+        if abstracts:
+            self._store(articles, abstracts)
+            print()
+        else:
+            print('No abstracts to classify.\n')
+            return
+
+        # prints classifier metrics
+        for classifier in self._classifiers:
+            classifier.print_metrics()
+            classifier.reset_metrics()
+
+        # prints general tag metrics
+        if self._save:
+            print(f'Total articles analyzed: {total - unreadable}.')
+            print(f'Stored {self._gen_new} new abstracts to \'{self._gen_tag}\'.')
+            print()
+            self._gen_new = 0
