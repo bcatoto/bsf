@@ -7,7 +7,7 @@ import os
 DATABASE_URL = os.environ.get('DATABASE_URL', 'Database url doesn\'t exist')
 ARTICLE_PATH = os.path.join(os.path.dirname(__file__), 'articles')
 
-def load_articles():
+def load_articles(filename, collection_name):
     """
     Loads all articles from all json files in articles folder into MongoDB database
     """
@@ -31,7 +31,7 @@ def load_articles():
         # connects to collection
         name = data['from']
         collection = db[name]
-        collection.create_index('id', unique=True)
+        collection.create_index(('id', 1), name='id', unique=True)
 
         # progress bar
         bar = ChargingBar(f'Processing articles from \'{name}\':', max=len(articles), suffix='%(index)d of %(max)d')
