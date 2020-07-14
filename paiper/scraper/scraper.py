@@ -26,6 +26,14 @@ class Scraper:
         self._gen_tag = gen_tag
         self._gen_new = 0
 
+        # create collection indices
+        self._collection.create_index(
+            [('doi', 1), ('uid', 1)],
+            name='ids',
+            unique=True
+        )
+        self._collection.create_index('tags', name='tags')
+
     def _get_id(self, data, key):
         """
         Gets value of id from json or returns None if id doesn't exist
