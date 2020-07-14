@@ -79,7 +79,7 @@ class SpringerScraper(Scraper):
         # prints subject and query made
         subject_print = subject if subject else 'None'
         keyword_print = keyword if keyword else 'None'
-        print(f'Database: Springer Nature. Subject: {subject_print}, Keyword: {keyword_print}.')
+        print(f'Collection: {self._collection.name}. Database: Springer Nature. Subject: {subject_print}, Keyword: {keyword_print}.')
 
         articles = []
         abstracts = []

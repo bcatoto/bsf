@@ -25,7 +25,6 @@ class Scraper:
         self._save = save_all
         self._gen_tag = gen_tag
         self._gen_new = 0
-        print(f'Collection: {collection}')
 
     def _get_id(self, data, key):
         """
