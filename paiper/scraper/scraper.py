@@ -3,7 +3,6 @@ from paiper.processor import MaterialsTextProcessor
 from paiper.classifier import Classifier
 import spacy
 import datetime
-import time
 import os
 
 DATABASE_URL = os.environ.get('DATABASE_URL', 'Database url doesn\'t exist')
@@ -98,10 +97,7 @@ class Scraper:
 
         # updates database
         if requests:
-            start = time.perf_counter()
             mongo = self._collection.bulk_write(requests, ordered=False)
-            elapsed = start - time.perf_counter()
-            print(f'Bulk write operation time: {int(elapsed / 60)}m{elapsed % 60:0.2f}s')
             self._gen_new += mongo.upserted_count + mongo.modified_count if mongo else 0
 
     def _store(self, articles, abstracts, doi=True):
@@ -157,10 +153,7 @@ class Scraper:
 
             # updates database
             if requests:
-                start = time.perf_counter()
                 mongo = self._collection.bulk_write(requests, ordered=False)
-                elapsed = start - time.perf_counter()
-                print(f'Bulk write operation time: {int(elapsed / 60)}m{elapsed % 60:0.2f}s')
                 classifier.relevant += mongo.upserted_count + mongo.modified_count if mongo else 0
 
         # if flag is marked True, store all articles from query to database (ignore classification filter)
