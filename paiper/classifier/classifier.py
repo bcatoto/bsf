@@ -24,7 +24,7 @@ class Classifier:
         self.tag = tag
         self.reset_metrics()
 
-    def train_model(self, database_name='classifier', collection_name=None, vectorizer_name=None, model_name=None, training_size=0.8, random_state=5, doc2vec=False):
+    def train_model(self, database_name='classifier', collection_name=None, vectorizer_name=None, model_name=None, training_size=0.8, random_state=5):
         """
         Trains Classifier based on set of relevant and irrelevant article abstracts
         Features: preprocessed abstracts (in vector form)
@@ -38,7 +38,6 @@ class Classifier:
         training set, remainder will go in testing set
         :param random_state: defaults to 5, controls random number generator of
         training and testing set splitter
-        :param doc2vec: defaults to False, Bool flag to use doc2vec
         """
         # initializes optional arguments to tag
         if collection_name is None:
@@ -67,34 +66,9 @@ class Classifier:
         train_abs, test_abs, train_val, test_val = model_selection.train_test_split(abstracts, values, train_size=training_size, random_state=random_state)
 
         # vectorize abstracts
-        # check for doc2vec option
-        if doc2vec:
-            train_docs = []
-            test_docs = []
-            for i, abstract in enumerate(train_abs):
-                train_docs.append(TaggedDocument(words=abstract.split(), tags=[train_val[i]]))
-            for i, abstract in enumerate(test_abs):
-                test_docs.append(TaggedDocument(words=abstract.split(), tags=[test_val[i]]))
-
-            cores = multiprocessing.cpu_count()
-            vectorizer = Doc2Vec(dm=0, vector_size=300, negative=5, hs=0, min_count=2, workers=cores, alpha=0.025, min_alpha=0.001)
-            vectorizer.build_vocab(train_docs)
-
-            train_docs = utils.shuffle(train_docs, random_state=random_state)
-            vectorizer.train(train_docs, total_examples=len(train_docs), epochs=30)
-
-            def vector_for_learning(vectorizer, input_docs):
-                targets, feature_vectors = zip(*[(doc.tags[0], vectorizer.infer_vector(doc.words, steps=20)) for doc in input_docs])
-                return targets, feature_vectors
-
-            train_val, train_feat = vector_for_learning(vectorizer, train_docs)
-            test_val, test_feat = vector_for_learning(vectorizer, test_docs)
-
-        # default to tf-idf
-        else:
-            vectorizer = TfidfVectorizer()
-            train_feat = vectorizer.fit_transform(train_abs)
-            test_feat = vectorizer.transform(test_abs)
+        vectorizer = TfidfVectorizer()
+        train_feat = vectorizer.fit_transform(train_abs)
+        test_feat = vectorizer.transform(test_abs)
 
         # train model
         model = LogisticRegression()
