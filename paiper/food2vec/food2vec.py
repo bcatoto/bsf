@@ -18,15 +18,15 @@ EXCLUDE_PUNCT = ['=', '.', ',', '(', ')', '<', '>', '\'', '“', '”', '≥', '
 
 class Food2Vec:
 
-    def __init__(self, tag, collection = 'all'):
+    def __init__(self, tag):
         """
         Initializes collection
+
         :param tag: name of tag to filter articles for model training
+        :param database: defaults to 'abstracts', database to get abstracts from
         :param collection: defaults to 'all', collection to get abstracts from
         """
         self.tag = tag
-        self._collection = MongoClient(DATABASE_URL).abstracts[collection]
-        print(f'Collection: {collection}. Tag: {tag}.')
 
     def _exclude_words(self, phrasegrams, words):
         """
@@ -75,9 +75,12 @@ class Food2Vec:
             else:
                 return grams[sent], grams
 
-    def train_model(self, phrases=True, depth=2, min_count=10, threshold=15.0):
+    def train_model(self, database_name='abstracts', collection_name='all', phraser_name=None, model_name=None, phrases=True, depth=2, min_count=10, threshold=15.0):
         """
         Trains word2vec model based on dataset of tag
+
+        :param database: defaults to 'classifier', database to get training data from
+        :param collection_name: defaults to 'all', collection to get training data from
         :param phrases: defaults to True, Bool flag to extract phrases from corpus
         :param depth: defaults to 2, number of passes to perform for phrase generation
         :param min_count: defaults to 10, minimum number of occurrences for phrase to be considered
@@ -86,9 +89,18 @@ class Food2Vec:
         # ensure that C version is being used
         assert FastVersion > -1
 
-        # gets only processed abstracts from database
+        # initializes optional arguments to tag
+        if phraser_name is None:
+            phraser_name = self.tag
+        if model_name is None:
+            model_name = self.tag
+
+        print(f'Collection: {database_name}.{collection_name}.')
+
+        # queries relevant collection of MongoDB database
         print('Getting articles...')
-        articles = list(self._collection.find(
+        collection = MongoClient(DATABASE_URL)[database_name][collection_name]
+        articles = list(collection.find(
             { 'tags': self.tag },
             { 'processed_abstract' : 1, '_id': 0 }
         ))
@@ -110,7 +122,7 @@ class Food2Vec:
             )
 
             # saves phraser
-            phraser.save(os.path.join(PHRASERS_PATH, f'{self.tag}.pkl'))
+            phraser.save(os.path.join(PHRASERS_PATH, f'{phraser_name}.pkl'))
             self._phraser = phraser
 
         # train word2vec model
@@ -126,38 +138,57 @@ class Food2Vec:
         )
 
         # saves word2vec model
-        model.save(os.path.join(MODELS_PATH, self.tag))
+        model.save(os.path.join(MODELS_PATH, model_name))
         self._model = model
 
         print('Model saved.')
 
-    def load_model(self):
+    def load_phraser(self, phraser_name=None):
         """
-        Loads the specific word2vec model associated with tag
-        """
-        filename = os.path.join(MODELS_PATH, self.tag)
-        self._model = Word2Vec.load(filename)
+        Loads phraser from phrasers folder
 
-    def load_phraser(self):
-        filename = os.path.join(PHRASERS_PATH, f'{self.tag}.pkl')
+        :param phraser_name: defaults to tag, the name of phraser file to load
+        """
+        # initializes optional arguments to tag
+        if phraser_name is None:
+            phraser_name = self.tag
+
+        # loads phraser
+        filename = os.path.join(PHRASERS_PATH, f'{phraser_name}.pkl')
         self._phraser = Phraser.load(filename)
+
+    def load_model(self, model_name=None):
+        """
+        Loads Word2Vec model from models folder
+
+        :param model_name: defaults to tag, the name of model file to load
+        """
+        # initializes optional arguments to tag
+        if model_name is None:
+            model_name = self.tag
+
+        # loads model
+        filename = os.path.join(MODELS_PATH, model_name)
+        self._model = Word2Vec.load(filename)
 
     def most_similar(self, term, topn=1):
         """
         Returns terms most similar to query
+
         :param term: term to compare similarity to
         :topn: default to 1, number of terms returned in order of most similar
         """
         term_phrase = ' '.join(self._phraser[term.split(' ')])
         similar = self._model.wv.most_similar(term_phrase, topn=topn)
 
-        print(f'Model: {self.tag}, Term: {term_phrase}')
+        print(f'Model: {self.tag}. Term: {term_phrase}.')
         for result in similar:
             print(f'\t{result[0]}, {result[1]}')
 
     def analogy(self, term, same, opposite, topn=1):
         """
         Returns terms analogy based on given pair analogy
+
         :param term: term to find analogy to
         :param same: term in given pair analogy that term is similar to
         :param opposite: term in given pair analogy that analogy is looking for
@@ -173,6 +204,6 @@ class Food2Vec:
             topn=topn
         )
 
-        print(f'Model: {self.tag}, Term: {term_phrase}, Pair: {same_phrase} to {opp_phrase}')
+        print(f'Model: {self.tag}. Term: {term_phrase}. Pair: {same_phrase} to {opp_phrase}.')
         for result in analogy:
             print(f'\t{result[0]}, {result[1]}')

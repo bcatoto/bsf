@@ -12,6 +12,7 @@ class PubmedScraper(Scraper):
     def _remove_html(self, element):
         """
         Removes HTML formatting from contents of field
+
         :param element: HTML/XML element of field
         """
         if not element:
@@ -24,6 +25,7 @@ class PubmedScraper(Scraper):
     def _get_authors(self, authors):
         """
         Turns XML element of authors into list of authors
+
         :param authors: XML element containing authors
         """
         list = []
@@ -36,6 +38,7 @@ class PubmedScraper(Scraper):
     def _get_date(self, date):
         """
         Converts XML date element into datetime object
+
         :param date: date element containing year, month, and date elements
         """
         if not date:
@@ -45,6 +48,7 @@ class PubmedScraper(Scraper):
     def _get_string(self, element):
         """
         Returns string of XML element if element exists
+
         :param element: XML element
         """
         return element.string if element else None
@@ -53,9 +57,10 @@ class PubmedScraper(Scraper):
         """
         Scrapes metadata of PubMed articles returned by search term query, processes
         abstracts, and stores relevant articles
+
         :param term: PubMed term query
         """
-        print(f'Collection: {self._collection.name}. Database: PubMed. Term: {term}.')
+        print(f'Collection: {self._collection.database.name}.{self._collection.name}. Database: PubMed. Term: {term}.')
 
         # gets uids
         uids = []

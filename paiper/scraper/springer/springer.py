@@ -12,6 +12,7 @@ class SpringerScraper(Scraper):
     def _url_builder(self, s, subject, keyword):
         """
         Builds url to query Springer Nature API
+
         :param s: start index of returned result
         :param subject: subject constraint query
         :param keyword: keyword constraint query
@@ -26,20 +27,10 @@ class SpringerScraper(Scraper):
         # builds url
         return f'http://api.springernature.com/meta/v2/json?s={s}&p=100&q=({query})&api_key={SPRINGER_NATURE_API_KEY}'
 
-    def _get_value(self, data, key):
-        """
-        Gets value of key from json or returns None if key doesn't exist
-        :param data: dictionary to get data from
-        :param key: dictionary key
-        """
-        try:
-            return data[key]
-        except KeyError:
-            return None
-
     def _get_creators(self, creators):
         """
         Turns list of dictionary of creators into list of creators
+
         :param creators: list of creators where each creator is inside a dictionary
         """
         list = []
@@ -50,6 +41,7 @@ class SpringerScraper(Scraper):
     def _get_url(self, urls):
         """
         Returns generic url to paper or first url from list of urls
+
         :param urls: list of urls where each url is inside a dictionary
         """
         if not urls:
@@ -59,18 +51,11 @@ class SpringerScraper(Scraper):
                 return url['value']
         return urls[0]['value']
 
-    def _get_date(self, date):
-        """
-        Converts date into datetime object
-        :param date: date formatted 'YYYY-MM-DD'
-        """
-        date_array = date.split('-')
-        return datetime.datetime(int(date_array[0]), int(date_array[1]), int(date_array[2]))
-
     def scrape(self, subject = '', keyword = ''):
         """
         Scrapes metadata of Springer Nature articles returned by subject and
         keyword query, processes abstracts, and stores relevant articles
+
         :param subject: subject constraint query, if empty does not include subject
         constraint to query
         :param keyword: keyword constraint query, if empty does not include keyword
@@ -79,7 +64,7 @@ class SpringerScraper(Scraper):
         # prints subject and query made
         subject_print = subject if subject else 'None'
         keyword_print = keyword if keyword else 'None'
-        print(f'Collection: {self._collection.name}. Database: Springer Nature. Subject: {subject_print}, Keyword: {keyword_print}.')
+        print(f'Collection: {self._collection.database.name}.{self._collection.name}. Database: Springer Nature. Subject: {subject_print}, Keyword: {keyword_print}.')
 
         articles = []
         abstracts = []

@@ -9,30 +9,10 @@ ELSEVIER_API_KEY = os.environ.get('ELSEVIER_API_KEY', 'Elsevier key doesn\'t exi
 
 class ElsevierScraper(Scraper):
 
-    def _get_value(self, data, key):
-        """
-        Gets value of key from json or returns None if key doesn't exist
-        :param data: dictionary to get data from
-        :param key: dictionary key
-        """
-        try:
-            return data[key]
-        except KeyError:
-            return None
-
-    def _get_date(self, date):
-        """
-        Converts date into datetime object
-        :param date: date formatted 'YYYY-MM-DD'
-        """
-        if not date:
-            return None
-        date_array = date.split('-')
-        return datetime.datetime(int(date_array[0]), int(date_array[1]), int(date_array[2]))
-
     def _get_creators(self, creators):
         """
         Turns list of dictionary of creators into list of creators and ignores extraneous data
+
         :param creators: list of creators where each creator is inside a dictionary
         """
         if not creators:
@@ -49,9 +29,10 @@ class ElsevierScraper(Scraper):
         """
         Scrapes metadata of Elsevier (ScienceDirect) articles returned
         by query, processes abstracts, and stores relevant articles
+
         :param query: Elsevier database query
         """
-        print(f'Collection: {self._collection.name}. Database: Elsevier. Query: {query}.')
+        print(f'Collection: {self._collection.database.name}.{self._collection.name}. Database: Elsevier. Query: {query}.')
 
         # creates search url
         url = f'https://api.elsevier.com/content/search/sciencedirect?query={query}&apiKey={ELSEVIER_API_KEY}&httpAccept=application%2Fjson'

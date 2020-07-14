@@ -18,26 +18,40 @@ class Classifier:
     def __init__(self, tag):
         """
         Initializes Classifier class with given tag
+
         :param tag: name of tag to filter articles for model training
-        and name of document tag
         """
         self.tag = tag
         self.reset_metrics()
 
-    def train_model(self, training_size=0.8, random_state=5, doc2vec=False):
+    def train_model(self, database_name='classifier', collection_name=None, vectorizer_name=None, model_name=None, training_size=0.8, random_state=5, doc2vec=False):
         """
         Trains Classifier based on set of relevant and irrelevant article abstracts
         Features: preprocessed abstracts (in vector form)
         Values: relevant (1) or irrelevant (0)
 
-        :param training_size: default 0.8, percentage of articles to go in
+        :param database: defaults to 'classifier', database to get training data from
+        :param collection_name: defaults to tag, collection to get training data from
+        :param vectorizer_name: defaults to tag, name of vectorizer file
+        :param model_name: defaults to tag, name of model file
+        :param training_size: defaults to 0.8, percentage of articles to go in
         training set, remainder will go in testing set
-        :param random_state: default 5, controls random number generator of
+        :param random_state: defaults to 5, controls random number generator of
         training and testing set splitter
-        :param doc2vec: default False, Bool flag to use doc2vec
+        :param doc2vec: defaults to False, Bool flag to use doc2vec
         """
+        # initializes optional arguments to tag
+        if collection_name is None:
+            collection_name = self.tag
+        if vectorizer_name is None:
+            vectorizer_name = self.tag
+        if model_name is None:
+            model_name = self.tag
+
+        print(f'Collection: {database_name}.{collection_name}.')
+
         # queries relevant collection of MongoDB database
-        collection = MongoClient(DATABASE_URL).classifier[self.tag]
+        collection = MongoClient(DATABASE_URL)[database_name][collection_name]
         articles = list(collection.find())
 
         # fill abstracts and values lists
@@ -93,33 +107,51 @@ class Classifier:
         print(classification_report(test_val, test_pred))
 
         # pickles vectorizer and model and saves to respective folders
-        with open(os.path.join(VECTORIZERS_PATH, f'{self.tag}_vectorizer.pkl'), 'wb') as file:
+        vec_filename = os.path.join(VECTORIZERS_PATH, f'{vectorizer_name}.pkl')
+        with open(vec_filename, 'wb') as file:
             pickle.dump(vectorizer, file)
-        with open(os.path.join(MODELS_PATH, f'{self.tag}_model.pkl'), 'wb') as file:
+
+        model_filename = os.path.join(MODELS_PATH, f'{model_name}.pkl')
+        with open(model_filename, 'wb') as file:
             pickle.dump(model, file)
 
         self._vectorizer = vectorizer
         self._model = model
 
-    def load_vectorizer(self):
+    def load_vectorizer(self, vectorizer_name=None):
         """
-        Loads given vectorizer from vectorizer folder
+        Loads vectorizer from vectorizers folder
+
+        :param vectorizer_name: defaults to tag, the name of vectorizer file to load
         """
-        filename = os.path.join(VECTORIZERS_PATH, f'{self.tag}_vectorizer.pkl')
+        # initializes optional arguments to tag
+        if vectorizer_name is None:
+            vectorizer_name = self.tag
+
+        # loads vectorizer
+        filename = os.path.join(VECTORIZERS_PATH, f'{vectorizer_name}.pkl')
         with open(filename, 'rb') as file:
             self._vectorizer = pickle.load(file)
 
-    def load_model(self):
+    def load_model(self, model_name=None):
         """
-        Loads given model from models folder
+        Loads model from models folder
+
+        :param model_name: defaults to tag, the name of model file to load
         """
-        filename = os.path.join(MODELS_PATH, f'{self.tag}_model.pkl')
+        # initializes optional arguments to tag
+        if model_name is None:
+            model_name = self.tag
+
+        # loads vectorizer
+        filename = os.path.join(MODELS_PATH, f'{model_name}.pkl')
         with open(filename, 'rb') as file:
             self._model = pickle.load(file)
 
     def predict(self, abstracts):
         """
         Vectorizes the abstracts (in list form) and returns predictions of model on features
+
         :param abstracts: article abstracts to be classified as relevant or irrelevant
         based on model of Classifier
         """

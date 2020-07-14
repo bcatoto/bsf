@@ -8,20 +8,21 @@ import os
 DATABASE_URL = os.environ.get('DATABASE_URL', 'Database url doesn\'t exist')
 
 class Scraper:
-    db = MongoClient(DATABASE_URL).abstracts
     nlp = spacy.load('en_core_web_sm')
     processor = MaterialsTextProcessor()
 
-    def __init__(self, classifiers, collection, save_all=False, gen_tag='food science'):
+    def __init__(self, classifiers, database='abstracts', collection='all', save_all=False, gen_tag='food science'):
         """
-        Initializes classifiers and collection
+        Initializes Scraper class
+
         :param classifiers: model to determine relevance of abstract
-        :param collection: collection to store abstracts in
-        :param save_all: defaults to False, Bool flag to save all articles from query (rather than only those marked relevant)
+        :param database: defaults to 'abstracts', database to store abstracts in
+        :param collection: defaults to 'all', collection to store abstracts in
+        :param save_all: defaults to False, Bool flag to save all articles from query
         :param gen_tag: defaults to 'food science', name of tag to apply to all articles (required only if save_all is True)
         """
         self._classifiers = classifiers
-        self._collection = self.db[collection]
+        self._collection = MongoClient(DATABASE_URL)[database][collection]
         self._save = save_all
         self._gen_tag = gen_tag
         self._gen_new = 0
@@ -34,9 +35,10 @@ class Scraper:
         )
         self._collection.create_index('tags', name='tags')
 
-    def _get_id(self, data, key):
+    def _get_value(self, data, key):
         """
-        Gets value of id from json or returns None if id doesn't exist
+        Gets value of key from json or returns None if key doesn't exist
+
         :param data: dictionary to get data from
         :param key: dictionary key
         """
@@ -45,9 +47,21 @@ class Scraper:
         except KeyError:
             return None
 
+    def _get_date(self, date):
+        """
+        Converts date into datetime object
+
+        :param date: date formatted 'YYYY-MM-DD'
+        """
+        if not date:
+            return None
+        date_array = date.split('-')
+        return datetime.datetime(int(date_array[0]), int(date_array[1]), int(date_array[2]))
+
     def _save_all(self, articles, doi):
         """
         Stores all articles from database query (regardless of classifier result) under general tag
+
         :param articles: list of article objects to add to database
         :param doi: Bool flag for whether stored IDs are DOI
         """
@@ -93,9 +107,10 @@ class Scraper:
         """
         Classifies articles based on processed abstracts and stores in database
         if relevant
+
         :param articles: list of article objects to add to database
         :param abstracts: list of processed abstracts to be checked against classifier
-        :param doi: Bool flag for whether stored IDs are DOI
+        :param doi: defaults to True, Bool flag for whether stored IDs are DOI
         """
         total = len(abstracts)
 
@@ -150,18 +165,3 @@ class Scraper:
         # if flag is marked True, store all articles from query to database (ignore classification filter)
         if self._save:
             self._save_all(articles, doi)
-
-    def set_classifiers(self, classifiers):
-        """
-        Sets classifier
-        :param classifiers: model to determine relevance of abstract
-        """
-        self._classifiers = classifiers
-
-    def set_collection(self, collection):
-        """
-        Sets collection
-        :param collection: collection to store abstracts and metadata in
-        """
-        self._collection = db[collection]
-        print(f'Collection: {collection}')
