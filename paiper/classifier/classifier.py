@@ -30,7 +30,7 @@ class Classifier:
         Features: preprocessed abstracts (in vector form)
         Values: relevant (1) or irrelevant (0)
 
-        :param database: defaults to 'classifier', database to get training data from
+        :param database_name: defaults to 'classifier', database to get training data from
         :param collection_name: defaults to tag, collection to get training data from
         :param vectorizer_name: defaults to tag, name of vectorizer file
         :param model_name: defaults to tag, name of model file

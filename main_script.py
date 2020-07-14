@@ -92,7 +92,7 @@ def main():
                 model.train_model(collection=args.collection)
             else:
                 model.load_model()
-            model.load_phraser()
+                model.load_phraser()
 
             # similarity
             if args.similar:
