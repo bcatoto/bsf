@@ -7,7 +7,7 @@ import os
 DATABASE_URL = os.environ.get('DATABASE_URL', 'Database url doesn\'t exist')
 ARTICLE_PATH = os.path.join(os.path.dirname(__file__), 'articles')
 
-def load_articles(filename, collection_name):
+def load_articles():
     """
     Loads all articles from all json files in articles folder into MongoDB database
     """
