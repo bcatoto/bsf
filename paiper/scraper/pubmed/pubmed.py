@@ -193,7 +193,8 @@ class PubmedScraper(Scraper):
 
         # prints general tag metrics
         if self._save:
-            print(f'Total articles analyzed: {total - unreadable}.')
+            print(f'Total articles analyzed: {self._gen_total}.')
             print(f'Stored {self._gen_new} new abstracts to \'{self._gen_tag}\'.')
             print()
             self._gen_new = 0
+            self._gen_total = 0

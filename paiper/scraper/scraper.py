@@ -26,6 +26,7 @@ class Scraper:
         self._save = save_all
         self._gen_tag = gen_tag
         self._gen_new = 0
+        self._gen_total = 0
 
         # create collection indices
         self._collection.create_index(
@@ -65,7 +66,7 @@ class Scraper:
         :param articles: list of article objects to add to database
         :param doi: Bool flag for whether stored IDs are DOI
         """
-        total = len(articles)
+        self._gen_total += len(articles)
 
         # creates request to store article with corresponding tag
         requests = []
@@ -109,10 +110,8 @@ class Scraper:
         :param abstracts: list of processed abstracts to be checked against classifier
         :param doi: defaults to True, Bool flag for whether stored IDs are DOIs
         """
-        total = len(abstracts)
-
         for classifier in self._classifiers:
-            classifier.total += total
+            classifier.total += len(articles)
 
             # uses classifier to determine if relevant
             predictions = classifier.predict(abstracts)
@@ -156,6 +155,6 @@ class Scraper:
                 mongo = self._collection.bulk_write(requests, ordered=False)
                 classifier.relevant += mongo.upserted_count + mongo.modified_count if mongo else 0
 
-        # if flag is marked True, store all articles from query to database (ignore classification filter)
+        # if flag is marked True, store all articles from query to database
         if self._save:
             self._save_all(articles, doi)
