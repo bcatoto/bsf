@@ -73,13 +73,15 @@ class Food2Vec:
             else:
                 return grams[sent], grams
 
-    def train_model(self, database_name='abstracts', collection_name='all', phraser_name=None, model_name=None, phrases=True, depth=2, min_count=10, threshold=15.0):
+    def train_model(self, database_name='abstracts', collection_name='all', phrases=True, phraser_name=None, model_name=None, depth=2, min_count=10, threshold=15.0):
         """
         Trains word2vec model based on dataset of tag
 
         :param database: defaults to 'classifier', database to get training data from
         :param collection_name: defaults to 'all', collection to get training data from
         :param phrases: defaults to True, Bool flag to extract phrases from corpus
+        :param phraser_name: defaults to tag, name of phraser file
+        :param model_name: defaults to tag, name of Word2Vec model file
         :param depth: defaults to 2, number of passes to perform for phrase generation
         :param min_count: defaults to 10, minimum number of occurrences for phrase to be considered
         :param threshold: defaults to 15.0, phrase importance threshold
@@ -174,34 +176,37 @@ class Food2Vec:
         Returns terms most similar to query
 
         :param term: term to compare similarity to
-        :topn: default to 1, number of terms returned in order of similarity
+        :param topn: defaults to 1, number of terms returned in order of similarity
         """
-        term_phrase = ' '.join(self._phraser[term.split(' ')])
-        similar = self._model.wv.most_similar(term_phrase, topn=topn)
+        if self._phraser:
+            term = ' '.join(self._phraser[term.split(' ')])
 
-        print(f'Model: {self.tag}. Term: {term_phrase}.')
+        similar = self._model.wv.most_similar(term, topn=topn)
+
+        print(f'Model: {self.tag}. Term: {term}.')
         for result in similar:
-            print(f'\t{result[0]}, {result[1]}')
+            print(f'{result[0]}, {result[1]}')
 
-    def analogy(self, term, same, opposite, topn=1):
+    def analogy(self, term, same, opp, topn=1):
         """
         Returns terms analogy based on given pair analogy
 
         :param term: term to find analogy to
         :param same: term in given pair analogy that term is similar to
-        :param opposite: term in given pair analogy that analogy is looking for
-        :topn: default to 1, number of terms returned in order of similarity
+        :param opp: term in given pair analogy that analogy is looking for
+        :param topn: defaults to 1, number of terms returned in order of similarity
         """
-        term_phrase = ' '.join(self._phraser[term.split(' ')])
-        same_phrase = ' '.join(self._phraser[same.split(' ')])
-        opp_phrase = ' '.join(self._phraser[opposite.split(' ')])
+        if self._phraser:
+            term = ' '.join(self._phraser[term.split(' ')])
+            same = ' '.join(self._phraser[same.split(' ')])
+            opp = ' '.join(self._phraser[opp.split(' ')])
 
         analogy = self._model.wv.most_similar(
-            positive=[opp_phrase, term_phrase],
-            negative=[same_phrase],
+            positive=[opp, term],
+            negative=[same],
             topn=topn
         )
 
-        print(f'Model: {self.tag}. Term: {term_phrase}. Pair: {same_phrase} to {opp_phrase}.')
+        print(f'Model: {self.tag}. Term: {term}. Pair: {same} to {opp}.')
         for result in analogy:
-            print(f'\t{result[0]}, {result[1]}')
+            print(f'{result[0]}, {result[1]}')
