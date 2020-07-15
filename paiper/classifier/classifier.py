@@ -4,10 +4,8 @@ from sklearn.metrics import classification_report
 from sklearn import model_selection
 from sklearn import utils
 from pymongo import MongoClient
-from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 import pickle
 import os
-import multiprocessing
 
 DATABASE_URL = os.environ.get('DATABASE_URL', 'Database url doesn\'t exist')
 VECTORIZERS_PATH = os.path.join(os.path.dirname(__file__), 'vectorizers')
@@ -62,7 +60,6 @@ class Classifier:
 
         # split into training and testing data
         # good random_state results (for Matthew): 3 (0.95) and 5 (0.975)
-        # random_state results for Gabby are different
         train_abs, test_abs, train_val, test_val = model_selection.train_test_split(abstracts, values, train_size=training_size, random_state=random_state)
 
         # vectorize abstracts

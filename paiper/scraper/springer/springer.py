@@ -104,8 +104,8 @@ class SpringerScraper(Scraper):
                     sentences = []
                     is_unreadable = False
 
+                    # processes sentence text using mat2vec processor
                     for sent in doc.sents:
-                        # processes sentence text using processor from mat2vec
                         try:
                             tokens, materials = self.processor.process(sent.text)
                         except OverflowError:

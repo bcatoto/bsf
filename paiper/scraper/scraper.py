@@ -107,7 +107,7 @@ class Scraper:
 
         :param articles: list of article objects to add to database
         :param abstracts: list of processed abstracts to be checked against classifier
-        :param doi: defaults to True, Bool flag for whether stored IDs are DOI
+        :param doi: defaults to True, Bool flag for whether stored IDs are DOIs
         """
         total = len(abstracts)
 

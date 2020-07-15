@@ -9,15 +9,22 @@ import os
 
 KEYWORDS_PATH = os.path.join(os.path.dirname(__file__), 'paiper/scraper/keywords')
 
+'''
+Using the scraper:
+We want to save all articles related to food science, regardless of classifier result
+If you are running Gabby's keywords, then add the -o flag to your command
+If you are running Matthew's keywords, then don't use the -o flag
+If you are running a very generic term, don't use the -o flag
+'''
 def main():
     # set up parser
     parser = argparse.ArgumentParser(description='Scrape abstracts')
     parser.add_argument('-l', '--load', action='store_true', help='loads training data into database')
     parser.add_argument('-c', '--classifier', action='store_true', help='trains classifiers')
-    parser.add_argument('--keywords', type=str, help='opens text file of keywords and scrapes for each keyword')
+    parser.add_argument('--keywords', type=str, help='opens file of keywords and scrapes for each keyword (specify ending)')
     parser.add_argument('--query', type=str, default='', help='database query (requires quotation marks)')
     parser.add_argument('--subject', type=str, default='', help='Springer Nature subject query (requires quotation marks)')
-    parser.add_argument('--collection', type=str, default='sample', help='collection to store scraped abstracts in')
+    parser.add_argument('--collection', type=str, default='all', help='collection to store scraped abstracts in')
     parser.add_argument('-o', '--store', action='store_true', help='stores all scraped abstracts in general tag')
     parser.add_argument('-a', '--all', action='store_true', help='scrapes all databases')
     parser.add_argument('-s', '--springer', action='store_true', help='scrapes Springer Nature database')
@@ -51,7 +58,7 @@ def main():
         print()
 
         keywords = []
-        with open(os.path.join(KEYWORDS_PATH, f'{args.keywords}.txt'), 'r') as queries:
+        with open(os.path.join(KEYWORDS_PATH, f'{args.keywords}'), 'r') as queries:
             keywords = [word.strip() for word in queries]
 
         # initialize each scraper once rather than after each keyword

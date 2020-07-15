@@ -114,8 +114,8 @@ class ElsevierScraper(Scraper):
                 sentences = []
                 is_unreadable = False
 
+                # processes sentence text using processor from mat2vec
                 for sent in doc.sents:
-                    # processes sentence text using processor from mat2vec
                     try:
                         tokens, materials = self.processor.process(sent.text)
                     except OverflowError:

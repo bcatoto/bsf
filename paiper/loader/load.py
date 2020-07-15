@@ -55,7 +55,7 @@ def load_articles(database_name='classifier', filename=None):
         print()
 
     if filename is None:
-        # gets all files in articles folder
+        # no filename specified --> gets all files in articles folder 
         files = []
         for file in os.listdir(ARTICLE_PATH):
             if file.endswith('.json'):

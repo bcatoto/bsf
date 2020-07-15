@@ -1,6 +1,6 @@
 from pymongo import MongoClient, UpdateOne, DeleteOne
 from gensim.models import Word2Vec
-from gensim.models.word2vec import FAST_VERSION as FastVersion
+from gensim.models.word2vec import FAST_VERSION
 from gensim.models.phrases import Phrases, Phraser
 from progress.bar import ChargingBar
 import regex
@@ -23,8 +23,6 @@ class Food2Vec:
         Initializes collection
 
         :param tag: name of tag to filter articles for model training
-        :param database: defaults to 'abstracts', database to get abstracts from
-        :param collection: defaults to 'all', collection to get abstracts from
         """
         self.tag = tag
 
@@ -86,8 +84,8 @@ class Food2Vec:
         :param min_count: defaults to 10, minimum number of occurrences for phrase to be considered
         :param threshold: defaults to 15.0, phrase importance threshold
         """
-        # ensure that C version is being used
-        assert FastVersion > -1
+        # ensure that CPython version is being used
+        assert FAST_VERSION > -1
 
         # initializes optional arguments to tag
         if phraser_name is None:
@@ -176,7 +174,7 @@ class Food2Vec:
         Returns terms most similar to query
 
         :param term: term to compare similarity to
-        :topn: default to 1, number of terms returned in order of most similar
+        :topn: default to 1, number of terms returned in order of similarity
         """
         term_phrase = ' '.join(self._phraser[term.split(' ')])
         similar = self._model.wv.most_similar(term_phrase, topn=topn)
@@ -192,7 +190,7 @@ class Food2Vec:
         :param term: term to find analogy to
         :param same: term in given pair analogy that term is similar to
         :param opposite: term in given pair analogy that analogy is looking for
-        :topn: default to 1, number of terms returned in order of most similar
+        :topn: default to 1, number of terms returned in order of similarity
         """
         term_phrase = ' '.join(self._phraser[term.split(' ')])
         same_phrase = ' '.join(self._phraser[same.split(' ')])
