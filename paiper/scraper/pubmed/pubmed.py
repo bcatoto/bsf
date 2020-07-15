@@ -8,6 +8,11 @@ import re
 import os
 
 class PubmedScraper(Scraper):
+    """
+    Note: the PubMed API has the tendency to return the same doi multiple times for a query.
+    As a result, the number of new articles stored may be much less than anticipated (articles that
+    were previously inserted are correctly ignored in _store() in the Scraper class)
+    """
 
     def _remove_html(self, element):
         """

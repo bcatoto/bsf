@@ -64,11 +64,6 @@ class ElsevierScraper(Scraper):
                         continue
                     bar.next()
 
-                # if current page is last page, break
-                if data['link'][0]['@href'] == data['link'][3]['@href']:
-                    print(item)
-                    break
-
                 # sets url to next page in search
                 url = data['link'][-2]['@href']
 

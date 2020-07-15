@@ -48,6 +48,10 @@ def main():
             classifier.load_vectorizer()
             classifier.load_model()
 
+    # indicate that all abstracts will be saved
+    if args.store:
+        print('Store flag was marked. All abstracts scraped in this session will be saved.')
+
     # use all scrapers
     if args.all:
         args.springer = args.pubmed = args.elsevier = True
