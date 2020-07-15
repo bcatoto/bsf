@@ -68,7 +68,7 @@ class PubmedScraper(Scraper):
         total = 100000
 
         # progress bar
-        bar = ChargingBar('Getting UIDs:', max=total, suffix='%(index)d of %(max)d')
+        bar = ChargingBar('Getting UIDs:', max=total, suffix='%(index)d of %(max)d - %(elapsed_td)s')
 
         while page < total:
             url = f'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term={term}&retstart={page}&retmax=100000'
@@ -102,7 +102,7 @@ class PubmedScraper(Scraper):
         total = len(uids)
 
         # progress bar
-        bar = ChargingBar('Getting metadata:', max=total, suffix='%(index)d of %(max)d')
+        bar = ChargingBar('Getting metadata:', max=total, suffix='%(index)d of %(max)d - %(elapsed_td)s')
 
         while page < total:
             # creates url to query metadata for 200 uids

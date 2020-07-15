@@ -42,7 +42,7 @@ class ElsevierScraper(Scraper):
         total = 5000
 
         # progress bar
-        bar = ChargingBar('Getting DOIs:', max = 5000, suffix = '%(index)d of %(max)d')
+        bar = ChargingBar('Getting DOIs:', max = 5000, suffix = '%(index)d of %(max)d - %(elapsed_td)s')
 
         while item < total:
             response = requests.get(url)
@@ -86,7 +86,7 @@ class ElsevierScraper(Scraper):
             return
 
         # progress bar
-        bar = ChargingBar('Getting metadata:', max = len(dois), suffix = '%(index)d of %(max)d')
+        bar = ChargingBar('Getting metadata:', max = len(dois), suffix = '%(index)d of %(max)d - %(elapsed_td)s')
 
         for doi in dois:
             url = f'https://api.elsevier.com/content/article/doi/{doi}?apiKey={ELSEVIER_API_KEY}&httpAccept=application%2Fjson'

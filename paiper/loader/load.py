@@ -32,7 +32,7 @@ def load_articles(database_name='classifier', filename=None):
 
         # progress bar
         print(f'Collection: {collection.database.name}.{collection.name}. File: {filename}.')
-        bar = ChargingBar(f'Processing articles from \'{name}\':', max=len(articles), suffix='%(index)d of %(max)d')
+        bar = ChargingBar(f'Processing articles from \'{name}\':', max=len(articles), suffix='%(index)d of %(max)d - %(elapsed_td)s')
 
         requests = []
         for article in articles:
@@ -55,7 +55,7 @@ def load_articles(database_name='classifier', filename=None):
         print()
 
     if filename is None:
-        # no filename specified --> gets all files in articles folder 
+        # no filename specified --> gets all files in articles folder
         files = []
         for file in os.listdir(ARTICLE_PATH):
             if file.endswith('.json'):

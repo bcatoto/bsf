@@ -72,7 +72,7 @@ class SpringerScraper(Scraper):
         total = 100
 
         # progress bar
-        bar = ChargingBar('Getting metadata:', max = total, suffix = '%(index)d of %(max)d')
+        bar = ChargingBar('Getting metadata:', max = total, suffix = '%(index)d of %(max)d - %(elapsed_td)s')
 
         while item < total:
             # builds url and queries API

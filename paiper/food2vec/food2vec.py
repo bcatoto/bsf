@@ -2,7 +2,6 @@ from pymongo import MongoClient, UpdateOne, DeleteOne
 from gensim.models import Word2Vec
 from gensim.models.word2vec import FAST_VERSION
 from gensim.models.phrases import Phrases, Phraser
-from progress.bar import ChargingBar
 import regex
 import os
 import multiprocessing
