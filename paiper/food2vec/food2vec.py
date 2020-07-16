@@ -189,6 +189,8 @@ class Food2Vec:
     def analogy(self, term, same, opp, topn=1):
         """
         Returns terms analogy based on given pair analogy
+        Format: same is to opp as term is to analogy()
+        Ex: cow is to beef as pig is to what?
 
         :param term: term to find analogy to
         :param same: term in given pair analogy that term is similar to
