@@ -70,11 +70,11 @@ class PubmedScraper(Scraper):
         print(f'Collection: {self._collection.database.name}.{self._collection.name}. Database: PubMed. Term: {term}.')
 
         base = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils'
-        retmax = 20000
+        retmax = 10000
         unreadable = 0
         abstracts = []
         articles = []
-        total = 100000
+        total = retmax
 
         # progress bar
         bar = ChargingBar('Getting metadata:', max=total, suffix='%(index)d of %(max)d - %(elapsed_td)s')
