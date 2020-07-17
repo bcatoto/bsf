@@ -69,117 +69,103 @@ class PubmedScraper(Scraper):
         """
         print(f'Collection: {self._collection.database.name}.{self._collection.name}. Database: PubMed. Term: {term}.')
 
-        # gets uids
-        uids = []
-        page = 0
-        total = 100000
-
-        # progress bar
-        bar = ChargingBar('Getting UIDs:', max=total, suffix='%(index)d of %(max)d - %(elapsed_td)s')
-
-        while page < total:
-            url = f'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term={term}&retstart={page}&retmax=100000&usehistory=y&api_key={PUBMED_API_KEY}'
-            response = requests.get(url)
-
-            if response.ok:
-                soup = BeautifulSoup(response.content, 'html.parser')
-
-                # updates total to total number of papers in query
-                if page == 0:
-                    total = int(soup.count.string)
-                    bar.max = total
-
-                # stores UIDs returned by query
-                for id in soup.find_all('id'):
-                    uids.append(id.string)
-                    bar.next()
-
-            page += 100000
-        bar.finish()
-
-        if not uids:
-            print('No abstracts to classify.\n')
-            return
-
-        # gets metadata and abstracts
-        articles = []
-        abstracts = []
+        base = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils'
+        retmax = 20000
         unreadable = 0
-        page = 0
-        total = len(uids)
+        abstracts = []
+        articles = []
+        total = 100000
 
         # progress bar
         bar = ChargingBar('Getting metadata:', max=total, suffix='%(index)d of %(max)d - %(elapsed_td)s')
 
-        while page < total:
-            # creates url to query metadata for 200 uids
-            sub_uids = ','.join(uids[page:page + 200])
-            url = f'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id={sub_uids}&retmode=xml&api_key={PUBMED_API_KEY}'
+        for page in range(0, total, retmax):
+            # gets and stores to history UIDs of query
+            url = f'{base}/esearch.fcgi?db=pubmed&term={term}&retstart={page}'
+            url += f'&retmax={retmax}&usehistory=y&api_key={PUBMED_API_KEY}'
             response = requests.get(url)
 
-            if response.ok:
-                soup = BeautifulSoup(response.content, 'html.parser')
-                entries = soup.find_all('pubmedarticle')
+            if not response.ok:
+                print(f'\nPubmedScraper could not get UIDs for \'{term}\' on page {page}.')
+                continue
 
-                # stores UIDs returned by query
-                for article in entries:
-                    # store abstract text for use by mat2vec below
-                    abstract = self._remove_html(article.abstracttext)
+            # gets info for retrieving UIDs from history
+            soup = BeautifulSoup(response.content, 'html.parser')
+            web = soup.webenv.string
+            key = soup.querykey.string
+            total = int(soup.count.string)
+            bar.max = total
 
-                    # continues if paper does not have abstract
-                    if not abstract:
-                        unreadable += 1
-                        bar.next()
-                        continue
+            # gets metadata for articles from UIDs
+            url = f'{base}/efetch.fcgi?db=pubmed&WebEnv={web}'
+            url += f'&query_key={key}&retstart={page}&retmax={retmax}'
+            url += f'&retmode=xml&api_key={PUBMED_API_KEY}'
+            response = requests.get(url)
 
-                    # segments abstract by sentence
-                    doc = self.nlp(abstract)
-                    sentences = []
-                    is_unreadable = False
+            if not response.ok:
+                print(f'\nPubmedScraper could not get metadata for \'{term}\' on page {page}.')
+                continue
 
-                    for sent in doc.sents:
-                        # processes sentence text using processor from mat2vec
-                        try:
-                            tokens, materials = self.processor.process(sent.text)
-                        except OverflowError:
-                            is_unreadable = True
-                            break
+            soup = BeautifulSoup(response.content, 'html.parser')
+            entries = soup.find_all('pubmedarticle')
 
-                        processed_sent = ' '.join(tokens)
-                        sentences.append(processed_sent)
+            for article in entries:
+                # store abstract text for use by mat2vec below
+                abstract = self._remove_html(article.abstracttext)
 
-                    # if processor (from above) throws an error, skip the paper
-                    if is_unreadable:
-                        bar.next()
-                        unreadable += 1
-                        continue
-
-                    processed_abstract = '\n'.join(sentences)
-
-                    article = {
-                        'doi': self._get_string(article.find('elocationid', eidtype='doi')),
-                        'uid': self._get_string(article.find('pmid')),
-                        'title': self._remove_html(article.articletitle),
-                        'abstract': abstract,
-                        'url': None,
-                        'creators': self._get_authors(article.find_all('author')),
-                        'publication_name': self._remove_html(article.journal.title),
-                        'issn': self._get_string(article.find('issn', issntype='Print')),
-                        'eissn': self._get_string(article.find('issn', issntype='Electronic')),
-                        'publication_date': self._get_date(article.articledate),
-                        'database': 'pubmed',
-                        'processed_abstract': processed_abstract,
-                    }
-                    articles.append(article)
-                    abstracts.append(processed_abstract)
+                # continues if paper does not have abstract
+                if not abstract:
+                    unreadable += 1
                     bar.next()
+                    continue
 
-                    # classify abstracts if 20000 have been stored
-                    if len(abstracts) == 20000:
-                        self._store(articles, abstracts)
-                        articles = []
-                        abstracts = []
-            page += 200
+                # segments abstract by sentence
+                doc = self.nlp(abstract)
+                sentences = []
+                is_unreadable = False
+
+                for sent in doc.sents:
+                    # processes sentence text using processor from mat2vec
+                    try:
+                        tokens, materials = self.processor.process(sent.text)
+                    except OverflowError:
+                        is_unreadable = True
+                        break
+
+                    processed_sent = ' '.join(tokens)
+                    sentences.append(processed_sent)
+
+                # if processor (from above) throws an error, skip the paper
+                if is_unreadable:
+                    bar.next()
+                    unreadable += 1
+                    continue
+
+                processed_abstract = '\n'.join(sentences)
+
+                article = {
+                    'doi': self._get_string(article.find('elocationid', eidtype='doi')),
+                    'uid': self._get_string(article.find('pmid')),
+                    'title': self._remove_html(article.articletitle),
+                    'abstract': abstract,
+                    'url': None,
+                    'creators': self._get_authors(article.find_all('author')),
+                    'publication_name': self._remove_html(article.journal.title),
+                    'issn': self._get_string(article.find('issn', issntype='Print')),
+                    'eissn': self._get_string(article.find('issn', issntype='Electronic')),
+                    'publication_date': self._get_date(article.articledate),
+                    'database': 'pubmed',
+                    'processed_abstract': processed_abstract,
+                }
+                articles.append(article)
+                abstracts.append(processed_abstract)
+                bar.next()
+
+                # classify abstracts if 20000 have been stored
+                if len(abstracts) == 20000:
+                    self._store(articles, abstracts)
+                    articles = []
+                    abstracts = []
         bar.finish()
 
         # unreadable papers
