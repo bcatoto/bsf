@@ -13,7 +13,6 @@ emulsion
 lupin
 muscle fiber
 flavor profile
-texture
 protein structure
 moisture
 texture
