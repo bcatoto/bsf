@@ -74,12 +74,13 @@ class PubmedScraper(Scraper):
         unreadable = 0
         abstracts = []
         articles = []
+        page = 0
         total = retmax
 
         # progress bar
         bar = ChargingBar('Getting metadata:', max=total, suffix='%(index)d of %(max)d - %(elapsed_td)s')
 
-        for page in range(0, total, retmax):
+        while page < total:
             # gets and stores to history UIDs of query
             url = f'{base}/esearch.fcgi?db=pubmed&term={term}&retstart={page}'
             url += f'&retmax={retmax}&usehistory=y&api_key={PUBMED_API_KEY}'
@@ -166,6 +167,7 @@ class PubmedScraper(Scraper):
                     self._store(articles, abstracts)
                     articles = []
                     abstracts = []
+            page += retmax
         bar.finish()
 
         # unreadable papers
