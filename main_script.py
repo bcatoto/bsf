@@ -9,13 +9,14 @@ import os
 
 KEYWORDS_PATH = os.path.join(os.path.dirname(__file__), 'paiper/scraper/keywords')
 
-'''
+"""
 Using the scraper:
 We want to save all articles related to food science, regardless of classifier result
 If you are running Gabby's keywords, then add the -o flag to your command
 If you are running Matthew's keywords, then don't use the -o flag
 If you are running a very generic term, don't use the -o flag
-'''
+"""
+
 def main():
     # set up parser
     parser = argparse.ArgumentParser(description='Scrape abstracts')
