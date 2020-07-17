@@ -4,7 +4,7 @@ import requests
 import json
 import os
 
-SPRINGER_NATURE_API_KEY = os.environ.get('SPRINGER_NATURE_API_KEY', 'Springer key doesn\'t exist')
+SPRINGER_NATURE_API_KEY = os.environ.get('SPRINGER_NATURE_API_KEY', 'Springer Nature key doesn\'t exist')
 
 class SpringerScraper(Scraper):
 

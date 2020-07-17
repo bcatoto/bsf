@@ -7,6 +7,8 @@ import datetime
 import re
 import os
 
+PUBMED_API_KEY = os.environ.get('PUBMED_API_KEY', 'PubMed key doesn\'t exist')
+
 class PubmedScraper(Scraper):
     """
     Note: the PubMed API has the tendency to return the same doi multiple times for a query.
@@ -76,7 +78,7 @@ class PubmedScraper(Scraper):
         bar = ChargingBar('Getting UIDs:', max=total, suffix='%(index)d of %(max)d - %(elapsed_td)s')
 
         while page < total:
-            url = f'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term={term}&retstart={page}&retmax=100000'
+            url = f'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term={term}&retstart={page}&retmax=100000&usehistory=y&api_key={PUBMED_API_KEY}'
             response = requests.get(url)
 
             if response.ok:
@@ -112,7 +114,7 @@ class PubmedScraper(Scraper):
         while page < total:
             # creates url to query metadata for 200 uids
             sub_uids = ','.join(uids[page:page + 200])
-            url = f'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id={sub_uids}&retmode=xml'
+            url = f'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id={sub_uids}&retmode=xml&api_key={PUBMED_API_KEY}'
             response = requests.get(url)
 
             if response.ok:
