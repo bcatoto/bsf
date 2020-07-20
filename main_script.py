@@ -98,10 +98,10 @@ def main():
 
     # run word2vec
     if args.food2vec:
-        models = [Food2Vec('dataset1'), Food2Vec('dataset2')]
+        models = [Food2Vec('gabby')]
         for model in models:
             if args.train:
-                model.train_model(collection=args.collection)
+                model.train_model(collection_name=args.collection)
             else:
                 model.load_model()
                 model.load_phraser()

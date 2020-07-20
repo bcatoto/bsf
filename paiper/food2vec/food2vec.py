@@ -105,6 +105,7 @@ class Food2Vec:
         ))
         print(f'Number of articles: {len(articles)}.')
 
+        print('Getting sentences...')
         sentences = []
         for article in articles:
             abstract = article['processed_abstract'].split('\n')
