@@ -41,7 +41,7 @@ def main():
         load_articles()
 
     # classifier
-    classifiers = [Classifier('gabby'), Classifier('matthew')]
+    classifiers = [Classifier('dataset1'), Classifier('dataset2')]
     for classifier in classifiers:
         if args.classifier:
             classifier.train_model()
@@ -98,7 +98,7 @@ def main():
 
     # run word2vec
     if args.food2vec:
-        models = [Food2Vec('gabby'), Food2Vec('matthew')]
+        models = [Food2Vec('dataset1'), Food2Vec('dataset2')]
         for model in models:
             if args.train:
                 model.train_model(collection=args.collection)
