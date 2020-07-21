@@ -17,6 +17,12 @@ If you are running Matthew's keywords, then don't use the -o flag
 If you are running a very generic term, don't use the -o flag
 """
 
+"""
+Reference:
+gabby --> dataset1
+matthew --> dataset2
+"""
+
 def main():
     # set up parser
     parser = argparse.ArgumentParser(description='Scrape abstracts')
@@ -41,7 +47,7 @@ def main():
         load_articles()
 
     # classifier
-    classifiers = [Classifier('dataset1'), Classifier('dataset2')]
+    classifiers = [Classifier('gabby'), Classifier('matthew')]
     for classifier in classifiers:
         if args.classifier:
             classifier.train_model()
