@@ -191,6 +191,7 @@ class Food2Vec:
         print(f'Model: {self.tag}. Term: {term}.')
         for result in similar:
             print(f'{result[0]}, {result[1]}')
+        print()
 
     def analogy(self, term, same, opp, filter=False, topn=1):
         """
@@ -226,6 +227,5 @@ class Food2Vec:
         """
         Filter the results by eliminating those closer to "meat" than to "plant"
         """
-        processed_results = [x[0], x[1] for x in results
-            if self._model.wv.similarity(x[0],'plant') > self._model.wv.similarity(x[0],'meat')]
+        processed_results = [x[0] for x in results if self._model.wv.similarity(x[0],'plant') > self._model.wv.similarity(x[0],'meat')]
         return processed_results
