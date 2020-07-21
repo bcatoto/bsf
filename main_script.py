@@ -47,7 +47,7 @@ def main():
         load_articles()
 
     # classifier
-    classifiers = [Classifier('gabby'), Classifier('matthew')]
+    classifiers = [Classifier('dataset1'), Classifier('dataset2')]
     for classifier in classifiers:
         if args.classifier:
             classifier.train_model()
@@ -104,10 +104,7 @@ def main():
 
     # run word2vec
     if args.food2vec:
-        # if you are training a model, use 'gabby' to get the relevant MongoDB articles.
-        # If loading, use 'dataset1'
-        # models = [Food2Vec('gabby')]
-        models = [Food2Vec('dataset1')]
+        models = [Food2Vec('dataset1'), Food2Vec('dataset2')]
         for model in models:
             if args.train:
                 model.train_model(collection_name=args.collection)
