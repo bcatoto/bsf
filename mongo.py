@@ -6,6 +6,7 @@ DATABASE_URL = os.environ.get('DATABASE_URL', 'Database url doesn\'t exist')
 def main():
     collection = MongoClient(DATABASE_URL).abstracts.all
 
+    print('Removing \'gabby\'')
     print('Getting documents...')
     docs = collection.find({ 'tags': { '$all': ['gabby', 'dataset1'] } })
 
@@ -19,6 +20,7 @@ def main():
     response = collection.bulk_write(requests)
     print(f'Modified: {response.modified_count}')
 
+    print('Converting \'gabby\' to \'dataset1\'')
     print('Getting documents...')
     docs = collection.find({ 'tags': 'gabby' })
 
@@ -34,6 +36,7 @@ def main():
     response = collection.bulk_write(requests)
     print(f'Modified: {response.modified_count}')
 
+    print('Removing \'matthew\'')
     print('Getting documents...')
     docs = collection.find({ 'tags': { '$all': ['matthew', 'dataset2'] } })
 
@@ -47,6 +50,7 @@ def main():
     response = collection.bulk_write(requests)
     print(f'Modified: {response.modified_count}')
 
+    print('Converting \'matthew\' to \'dataset2\'')
     print('Getting documents...')
     docs = collection.find({ 'tags': 'matthew' })
 
