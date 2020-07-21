@@ -19,6 +19,7 @@ def main():
         ))
     response = collection.bulk_write(requests)
     print(f'Modified: {response.modified_count}')
+    print()
 
     print('Converting \'gabby\' to \'dataset1\'')
     print('Getting documents...')
@@ -35,6 +36,7 @@ def main():
         ))
     response = collection.bulk_write(requests)
     print(f'Modified: {response.modified_count}')
+    print()
 
     print('Removing \'matthew\'')
     print('Getting documents...')
@@ -49,6 +51,7 @@ def main():
         ))
     response = collection.bulk_write(requests)
     print(f'Modified: {response.modified_count}')
+    print()
 
     print('Converting \'matthew\' to \'dataset2\'')
     print('Getting documents...')
@@ -65,6 +68,7 @@ def main():
         ))
     response = collection.bulk_write(requests)
     print(f'Modified: {response.modified_count}')
+    print()
 
 if __name__ == '__main__':
     main()

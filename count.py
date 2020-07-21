@@ -4,7 +4,7 @@ import os
 DATABASE_URL = os.environ.get('DATABASE_URL', 'Database url doesn\'t exist')
 
 def main():
-    tags = ['gabby', 'matthew', 'food science']
+    tags = ['gabby', 'dataset1', 'dataset2', 'matthew', 'food science']
 
     collection = MongoClient(DATABASE_URL).abstracts.all
 
