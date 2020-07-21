@@ -104,16 +104,16 @@ def main():
 
     # run word2vec
     if args.food2vec:
-        # if you are training a model, use 'gabby' to get the relevant MongoDB articles. 
+        # if you are training a model, use 'gabby' to get the relevant MongoDB articles.
         # If loading, use 'dataset1'
-        models = [Food2Vec('gabby')]
-        # models = [Food2Vec('dataset1')]
+        # models = [Food2Vec('gabby')]
+        models = [Food2Vec('dataset1')]
         for model in models:
             if args.train:
                 model.train_model(collection_name=args.collection)
             else:
-                model.load_model()
                 model.load_phraser()
+                model.load_wv()
 
             # similarity
             if args.similar:

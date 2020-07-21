@@ -2,13 +2,15 @@ from pymongo import MongoClient, UpdateOne, DeleteOne
 from gensim.models import Word2Vec
 from gensim.models.word2vec import FAST_VERSION
 from gensim.models.phrases import Phrases, Phraser
+from gensim.models import KeyedVectors
 import regex
 import os
 import multiprocessing
 
 DATABASE_URL = os.environ.get('DATABASE_URL', 'Database url doesn\'t exist')
-MODELS_PATH = os.path.join(os.path.dirname(__file__), 'models')
 PHRASERS_PATH = os.path.join(os.path.dirname(__file__), 'phrasers')
+MODELS_PATH = os.path.join(os.path.dirname(__file__), 'models')
+WV_PATH = os.path.join(os.path.dirname(__file__), 'wv')
 
 COMMON_TERMS = ['-', '-', b'\xe2\x80\x93', b'\'s', b'\xe2\x80\x99s', 'from', 'as',
                 'at', 'by', 'of', 'on', 'into', 'to', 'than', 'over', 'in', 'the',
@@ -72,15 +74,15 @@ class Food2Vec:
             else:
                 return grams[sent], grams
 
-    def train_model(self, database_name='abstracts', collection_name='all', phrases=True, phraser_name=None, model_name=None, depth=2, min_count=10, threshold=15.0):
+    def train_model(self, database_name='abstracts', collection_name='all', phraser_name=None, model_name=None, wv_name=None, depth=2, min_count=10, threshold=15.0):
         """
         Trains word2vec model based on dataset of tag
 
         :param database: defaults to 'classifier', database to get training data from
         :param collection_name: defaults to 'all', collection to get training data from
-        :param phrases: defaults to True, Bool flag to extract phrases from corpus
         :param phraser_name: defaults to tag, name of phraser file
         :param model_name: defaults to tag, name of Word2Vec model file
+        :param wv_name: defaults to tag, name of word vectors file
         :param depth: defaults to 2, number of passes to perform for phrase generation
         :param min_count: defaults to 10, minimum number of occurrences for phrase to be considered
         :param threshold: defaults to 15.0, phrase importance threshold
@@ -112,18 +114,17 @@ class Food2Vec:
             sentences += [sent.split(' ') for sent in abstract]
 
         # combines phrases in corpus
-        if phrases:
-            print('Getting phrases...')
-            sentences, phraser = self._wordgrams(
-                sentences,
-                depth=depth,
-                pc=min_count,
-                th=threshold
-            )
+        print('Getting phrases...')
+        sentences, phraser = self._wordgrams(
+            sentences,
+            depth=depth,
+            pc=min_count,
+            th=threshold
+        )
 
-            # saves phraser
-            phraser.save(os.path.join(PHRASERS_PATH, f'{phraser_name}.pkl'))
-            self._phraser = phraser
+        # saves phraser
+        phraser.save(os.path.join(PHRASERS_PATH, f'{phraser_name}.pkl'))
+        self._phraser = phraser
 
         # train word2vec model
         cores = multiprocessing.cpu_count()
@@ -139,9 +140,22 @@ class Food2Vec:
 
         # saves word2vec model
         model.save(os.path.join(MODELS_PATH, model_name))
+        model.wv.save(os.path.join(WV_PATH, wv_name))
         self._model = model
+        self._wv = model.wv
 
         print('Model saved.')
+
+    def continue_training(self, sentences, model_name=None, wv_name=None):
+        self._model.train(
+            sentences,
+            total_examples=sentences.length,
+            epochs=30
+        )
+
+        self._model.save(os.path.join(MODELS_PATH, model_name))
+        self._model.wv.save(os.path.join(WV_PATH, wv_name))
+        self._wv = self._model.wv
 
     def load_phraser(self, phraser_name=None):
         """
@@ -171,6 +185,20 @@ class Food2Vec:
         filename = os.path.join(MODELS_PATH, model_name)
         self._model = Word2Vec.load(filename)
 
+    def load_wv(self, wv_name=None):
+        """
+        Loads word vectors from wv folder
+
+        :param wv_name: defaults to tag, the name of word vectors file to load
+        """
+        # initializes optional arguments to tag
+        if wv_name is None:
+            wv_name = self.tag
+
+        # loads word vectors
+        filename = os.path.join(WV_PATH, wv_name)
+        self._wv = KeyedVectors.load(filename, mmap='r')
+
     def most_similar(self, term, filter=False, topn=1):
         """
         Returns terms most similar to query
@@ -179,11 +207,15 @@ class Food2Vec:
         :param filter: defaults to False, bool flag indicating if output should be post-processed
         :param topn: defaults to 1, number of terms returned in order of similarity
         """
-        if self._phraser:
-            term = ' '.join(self._phraser[term.split(' ')])
+        term = '_'.join(self._phraser[term.split(' ')])
 
         # note: could strengthen/reduce importance of other vectors with positive/negative connotation
-        similar = self._model.wv.most_similar(term, topn=topn)
+        try:
+            similar = self._wv.most_similar(term, topn=topn)
+        except KeyError:
+            print(f'{term} not in vocabulary')
+            print()
+            return
 
         if filter:
             similar = self._comparison_filter(similar)
@@ -205,12 +237,11 @@ class Food2Vec:
         :param filter: defaults to False, bool flag indicating if output should be post-processed
         :param topn: defaults to 1, number of terms returned in order of similarity
         """
-        if self._phraser:
-            term = ' '.join(self._phraser[term.split(' ')])
-            same = ' '.join(self._phraser[same.split(' ')])
-            opp = ' '.join(self._phraser[opp.split(' ')])
+        term = '_'.join(self._phraser[term.split(' ')])
+        same = '_'.join(self._phraser[same.split(' ')])
+        opp = '_'.join(self._phraser[opp.split(' ')])
 
-        analogy = self._model.wv.most_similar(
+        analogy = self._wv.most_similar(
             positive=[opp, term],
             negative=[same],
             topn=topn
@@ -227,5 +258,5 @@ class Food2Vec:
         """
         Filter the results by eliminating those closer to "meat" than to "plant"
         """
-        processed_results = [x[0] for x in results if self._model.wv.similarity(x[0],'plant') > self._model.wv.similarity(x[0],'meat')]
+        processed_results = [x[0] for x in results if self._wv.similarity(x[0],'plant') > self._wv.similarity(x[0],'meat')]
         return processed_results
