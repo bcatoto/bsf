@@ -171,23 +171,28 @@ class Food2Vec:
         filename = os.path.join(MODELS_PATH, model_name)
         self._model = Word2Vec.load(filename)
 
-    def most_similar(self, term, topn=1):
+    def most_similar(self, term, filter=False, topn=1):
         """
         Returns terms most similar to query
 
         :param term: term to compare similarity to
+        :param filter: defaults to False, bool flag indicating if output should be post-processed
         :param topn: defaults to 1, number of terms returned in order of similarity
         """
         if self._phraser:
             term = ' '.join(self._phraser[term.split(' ')])
 
+        # note: could strengthen/reduce importance of other vectors with positive/negative connotation
         similar = self._model.wv.most_similar(term, topn=topn)
+
+        if filter:
+            similar = self._comparison_filter(similar)
 
         print(f'Model: {self.tag}. Term: {term}.')
         for result in similar:
             print(f'{result[0]}, {result[1]}')
 
-    def analogy(self, term, same, opp, topn=1):
+    def analogy(self, term, same, opp, filter=False, topn=1):
         """
         Returns terms analogy based on given pair analogy
         Format: same is to opp as term is to analogy()
@@ -196,6 +201,7 @@ class Food2Vec:
         :param term: term to find analogy to
         :param same: term in given pair analogy that term is similar to
         :param opp: term in given pair analogy that analogy is looking for
+        :param filter: defaults to False, bool flag indicating if output should be post-processed
         :param topn: defaults to 1, number of terms returned in order of similarity
         """
         if self._phraser:
@@ -209,6 +215,17 @@ class Food2Vec:
             topn=topn
         )
 
+        if filter:
+            analogy = self._comparison_filter(analogy)
+
         print(f'Model: {self.tag}. Term: {term}. Pair: {same} to {opp}.')
         for result in analogy:
             print(f'{result[0]}, {result[1]}')
+
+    def _comparison_filter(self, results):
+        """
+        Filter the results by eliminating those closer to "meat" than to "plant"
+        """
+        processed_results = [x[0], x[1] for x in results
+            if self._model.wv.similarity(x[0],'plant') > self._model.wv.similarity(x[0],'meat')]
+        return processed_results
