@@ -33,8 +33,7 @@ class Scraper:
         self._collection.create_index(
             [('doi', 1), ('uid', 1)],
             name='ids',
-            unique=True,
-            sparse=True
+            unique=True
         )
         self._collection.create_index('tags', name='tags')
 
