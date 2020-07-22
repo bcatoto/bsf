@@ -137,7 +137,6 @@ class ElsevierScraper(Scraper):
                     'creators': self._get_creators(self._get_value(data, 'dc:creator')),
                     'publication_name': self._get_value(data, 'prism:publicationName'),
                     'issn': self._get_value(data, 'prism:issn'),
-                    'eissn': None,
                     'publication_date': self._get_date(self._get_value(data, 'prism:coverDate')),
                     'database': 'elsevier',
                     'processed_abstract': processed_abstract,

@@ -149,7 +149,6 @@ class PubmedScraper(Scraper):
                     'uid': self._get_string(article.find('pmid')),
                     'title': self._remove_html(article.articletitle),
                     'abstract': abstract,
-                    'url': None,
                     'creators': self._get_authors(article.find_all('author')),
                     'publication_name': self._remove_html(article.journal.title),
                     'issn': self._get_string(article.find('issn', issntype='Print')),

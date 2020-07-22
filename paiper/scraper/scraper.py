@@ -1,4 +1,5 @@
 from pymongo import MongoClient, UpdateOne
+from pymongo.errors import BulkWriteError
 from paiper.processor import MaterialsTextProcessor
 from paiper.classifier import Classifier
 import spacy
@@ -32,8 +33,10 @@ class Scraper:
         self._collection.create_index(
             [('doi', 1), ('uid', 1)],
             name='ids',
-            unique=True
+            unique=True,
+            sparse=True
         )
+        self._collection.create_index('title', name='title', unique=True)
         self._collection.create_index('tags', name='tags')
 
     def _get_value(self, data, key):
@@ -71,26 +74,21 @@ class Scraper:
         # creates request to store article with corresponding tag
         requests = []
         for article in articles:
-            id = article['doi'] if doi else article['uid']
+            # creates document to insert by filtering out fields that are None
+            doc = { k:v for k,v in article.items() if v is not None }
 
-            # inserts new document if it does not exist
+            # filters by id if exists, else filters by title
+            id = article['doi'] if doi else article['uid']
+            filter = { 'doi' if doi else 'uid': id }
+            if not id:
+                filter = { 'title': article['title'] }
+
+            # if article is marked as relevant, inserts new document if it
+            # does not exist and adds to tag
             requests.append(UpdateOne(
-                { 'doi' if doi else 'uid': id, },
+                filter,
                 {
-                    '$setOnInsert': {
-                        'doi': article['doi'],
-                        'uid': article['uid'],
-                        'title': article['title'],
-                        'abstract': article['abstract'],
-                        'url': article['url'],
-                        'creators': article['creators'],
-                        'publication_name': article['publication_name'],
-                        'issn': article['issn'],
-                        'eissn': article['eissn'],
-                        'publication_date': article['publication_date'],
-                        'database': article['database'],
-                        'processed_abstract': article['processed_abstract']
-                    },
+                    '$setOnInsert': doc,
                     '$addToSet': { 'tags': self._gen_tag }
                 },
                 upsert=True
@@ -119,28 +117,22 @@ class Scraper:
             # creates request to store article with corresponding tag
             requests = []
             for i, article in enumerate(articles):
-                id = article['doi'] if doi else article['uid']
-
-                # if article is marked as relevant, inserts new document if it
-                # does not exist and adds to tag
                 if predictions[i]:
+                    # creates document to insert by filtering out fields that are None
+                    doc = { k:v for k,v in article.items() if v is not None }
+
+                    # filters by id if exists, else filters by title
+                    id = article['doi'] if doi else article['uid']
+                    filter = { 'doi' if doi else 'uid': id }
+                    if not id:
+                        filter = { 'title': article['title'] }
+
+                    # if article is marked as relevant, inserts new document if it
+                    # does not exist and adds to tag
                     requests.append(UpdateOne(
-                        { 'doi' if doi else 'uid': id },
+                        filter,
                         {
-                            '$setOnInsert': {
-                                'doi': article['doi'],
-                                'uid': article['uid'],
-                                'title': article['title'],
-                                'abstract': article['abstract'],
-                                'url': article['url'],
-                                'creators': article['creators'],
-                                'publication_name': article['publication_name'],
-                                'issn': article['issn'],
-                                'eissn': article['eissn'],
-                                'publication_date': article['publication_date'],
-                                'database': article['database'],
-                                'processed_abstract': article['processed_abstract']
-                            },
+                            '$setOnInsert': doc,
                             '$addToSet': { 'tags': classifier.tag }
                         },
                         upsert=True
