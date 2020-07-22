@@ -42,7 +42,7 @@ class ElsevierScraper(Scraper):
         total = 5000
 
         # progress bar
-        bar = ChargingBar('Getting DOIs:', max = 5000, suffix = '%(index)d of %(max)d - %(elapsed_td)s')
+        bar = ChargingBar('Getting DOIs:', max = total, suffix = '%(index)d of %(max)d - %(elapsed_td)s')
 
         while item < total:
             response = requests.get(url)
@@ -57,11 +57,9 @@ class ElsevierScraper(Scraper):
 
                 # stores dois
                 for entry in data['entry']:
-                    try:
-                        dois.append(entry['prism:doi'])
-                    except KeyError:
-                        bar.next()
-                        continue
+                    doi = entry.get('prism:doi')
+                    if doi:
+                        dois.append(current_doi)
                     bar.next()
 
                 # sets url to next page in search
@@ -96,7 +94,7 @@ class ElsevierScraper(Scraper):
                     continue
                     
                 # store abstract text for use by mat2vec below
-                abstract = self._get_value(data, 'dc:description')
+                abstract = data.get('dc:description')
 
                 # continues if paper does not have abstract
                 if not abstract:
@@ -131,13 +129,13 @@ class ElsevierScraper(Scraper):
                 article = {
                     'doi': doi,
                     'uid': None,
-                    'title': self._get_value(data, 'dc:title'),
-                    'abstract': self._get_value(data, 'dc:description'),
-                    'url': self._get_value(data, 'prism:url'),
-                    'creators': self._get_creators(self._get_value(data, 'dc:creator')),
-                    'publication_name': self._get_value(data, 'prism:publicationName'),
-                    'issn': self._get_value(data, 'prism:issn'),
-                    'publication_date': self._get_date(self._get_value(data, 'prism:coverDate')),
+                    'title': data.get('dc:title'),
+                    'abstract': abstract,
+                    'url': data.get('prism:url'),
+                    'creators': self._get_creators(data.get('dc:creator')),
+                    'publication_name': data.get('prism:publicationName'),
+                    'issn': data.get('prism:issn'),
+                    'publication_date': self._get_date(data.get('prism:coverDate')),
                     'database': 'elsevier',
                     'processed_abstract': processed_abstract,
                 }

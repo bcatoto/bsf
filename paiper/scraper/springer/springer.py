@@ -92,14 +92,14 @@ class SpringerScraper(Scraper):
                 # gets metadata
                 for record in records:
                     # ignore abstract if doi is null
-                    doi = self._get_value(record, 'doi')
+                    doi = record.get('doi')
                     if not doi:
                         no_doi += 1
                         bar.next()
                         continue
 
                     # store abstract text for use by mat2vec below
-                    abstract = self._get_value(record, 'abstract')
+                    abstract = record.get('abstract')
 
                     # continues if paper does not have abstract
                     if not abstract:
@@ -133,16 +133,16 @@ class SpringerScraper(Scraper):
 
                     # create new document and store new article document if not in collection
                     article = {
-                        'doi': self._get_value(record, 'doi'),
+                        'doi': record.get('doi'),
                         'uid': None,
-                        'title': self._get_value(record, 'title'),
-                        'abstract': self._get_value(record, 'abstract'),
-                        'url': self._get_url(self._get_value(record, 'url')),
-                        'creators': self._get_creators(self._get_value(record, 'creators')),
-                        'publication_name': self._get_value(record, 'publicationName'),
-                        'issn': self._get_value(record, 'issn'),
-                        'eissn': self._get_value(record, 'eIssn'),
-                        'publication_date': self._get_date(self._get_value(record, 'publicationDate')),
+                        'title': record.get('title'),
+                        'abstract': record.get('abstract'),
+                        'url': self._get_url(record.get('url')),
+                        'creators': self._get_creators(record.get('creators')),
+                        'publication_name': record.get('publicationName'),
+                        'issn': record.get('issn'),
+                        'eissn': record.get('eIssn'),
+                        'publication_date': self._get_date(record.get('publicationDate')),
                         'database': 'springer',
                         'processed_abstract': processed_abstract
                     }

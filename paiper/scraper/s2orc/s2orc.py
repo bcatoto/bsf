@@ -6,13 +6,12 @@ import os
 DATA_PATH = os.path.join(os.path.dirname(__file__), 'data')
 
 class S2ORCScraper(Scraper):
-    def _get_creators(self, article):
+    def _get_creators(self, creators):
         """
         Turns list of dictionary of creators into list of creators
 
-        :param article: article metadata as a dictionary
+        :param creators: dictionary from article['authors']
         """
-        creators = self._get_value(article, 'authors')
         list = []
         for creator in creators:
             first = creator['first']
@@ -43,15 +42,15 @@ class S2ORCScraper(Scraper):
             article = json.loads(data)
 
             # ignore abstract if doi and uid are null
-            doi = self._get_value(article, 'doi')
-            uid = self._get_value(article, 'pubmed_id')
+            doi = article.get('doi')
+            uid = article.get('pubmed_id')
             if not doi and not uid:
                 no_id += 1
                 counter.next()
                 continue
 
             # store abstract text for use by mat2vec below
-            abstract = self._get_value(article, 'abstract')
+            abstract = article.get('abstract')
 
             # continues if paper does not have abstract
             if not abstract:
@@ -90,12 +89,12 @@ class S2ORCScraper(Scraper):
             article = {
                 'doi': doi,
                 'uid': uid,
-                'title': self._get_value(article, 'title'),
+                'title': article.get('title'),
                 'abstract': abstract,
-                'url': self._get_value(article, 's2_url'),
-                'creators': self._get_creators(article),
-                'publication_name': self._get_value(article, 'journal'),
-                'year': self._get_value(article, 'year'),
+                'url': article.get('s2_url'),
+                'creators': self._get_creators(article.get('authors')),
+                'publication_name': article.get('journal'),
+                'year': article.get('year'),
                 'database': 's2orc',
                 'processed_abstract': processed_abstract
             }

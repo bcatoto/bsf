@@ -35,18 +35,6 @@ class Scraper:
         self._collection.create_index('tags', name='tags')
         self._collection.create_index('database', name='database')
 
-    def _get_value(self, data, key):
-        """
-        Gets value of key from json or returns None if key doesn't exist
-
-        :param data: dictionary to get data from
-        :param key: dictionary key
-        """
-        try:
-            return data[key]
-        except KeyError:
-            return None
-
     def _get_date(self, date):
         """
         Converts date into datetime object
@@ -109,16 +97,18 @@ class Scraper:
                 if predictions[i]:
                     # creates document to insert by filtering out fields that are None
                     doc = { k:v for k,v in article.items() if v is not None }
-                    doi = article['doi']
-                    uid = article['uid']
+                    doi = doc.get('doi')
+                    uid = doc.get('uid')
 
-                    # sets either doi or uid as only id
+                    # sets either doi or uid as the only id
+                    # preference is for doi
                     if doi:
-                        filter = { 'doi': article['doi'] }
-                        del article['uid']
+                        filter = { 'doi': doi }
+                        doc.pop('uid', None)
+
                     else:
-                        filter = { 'uid': article['uid'] }
-                        del article['doi']
+                        filter = { 'uid': uid }
+                        doc.pop('doi', None)
 
                     # if article is marked as relevant, inserts new document if it
                     # does not exist and adds to tag
