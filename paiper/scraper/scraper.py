@@ -36,6 +36,7 @@ class Scraper:
             unique=True
         )
         self._collection.create_index('tags', name='tags')
+        self._collection.create_index('database', name='database')
 
     def _get_value(self, data, key):
         """
