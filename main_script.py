@@ -109,7 +109,7 @@ def main():
         # S2ORC scraper
         if args.s2orc:
             s2orc = S2ORCScraper(classifiers, collection=args.collection, save_all=args.store)
-            s2orc.scrape(filename=args.filename)
+            s2orc.scrape(args.filename)
 
     # run word2vec
     if args.food2vec:

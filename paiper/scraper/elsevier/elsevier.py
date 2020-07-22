@@ -94,7 +94,7 @@ class ElsevierScraper(Scraper):
                     unreadable += 1
                     bar.next()
                     continue
-
+                    
                 # store abstract text for use by mat2vec below
                 abstract = self._get_value(data, 'dc:description')
 
