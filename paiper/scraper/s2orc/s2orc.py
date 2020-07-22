@@ -1,4 +1,5 @@
 from paiper.scraper import Scraper
+from progress.counter import Counter
 import json
 import os
 
@@ -9,7 +10,7 @@ class S2ORCScraper(Scraper):
         """
         Turns list of dictionary of creators into list of creators
 
-        :param creators: list of creators where each creator is inside a dictionary
+        :param article: article metadata as a dictionary
         """
         creators = self._get_value(article, 'authors')
         list = []
@@ -21,93 +22,96 @@ class S2ORCScraper(Scraper):
             list.append(f'{first} {middle} {last} {suffix}')
         return list
 
-    def scrape(self, filename=None):
+    def scrape(self, filename):
         """
+        Scrapes metadata of S2ORC articles from given file
+
+        :param filename: name of file in data folder to scrape from
         """
         print(f'Collection: {self._collection.database.name}.{self._collection.name}. Database: S2ORC.')
 
         abstracts = []
         articles = []
+        no_id = 0
         unreadable = 0
 
-        def get_metadata(filename):
-            print(f'Getting metadata from {filename}...')
+        # counter
+        counter = Counter(message='Articles analyzed: ')
 
-            file = open(os.path.join(DATA_PATH, filename), 'r')
-            unreadable = 0
+        file = open(os.path.join(DATA_PATH, filename), 'r')
+        for data in file:
+            article = json.loads(data)
 
-            for data in file:
-                article = json.loads(data)
+            # ignore abstract if doi and uid are null
+            doi = self._get_value(article, 'doi')
+            uid = self._get_value(article, 'pubmed_id')
+            if not doi and not uid:
+                no_id += 1
+                counter.next()
+                continue
 
-                # store abstract text for use by mat2vec below
-                abstract = self._get_value(article, 'abstract')
+            # store abstract text for use by mat2vec below
+            abstract = self._get_value(article, 'abstract')
 
-                # continues if paper does not have abstract
-                if not abstract:
-                    unreadable += 1
-                    continue
+            # continues if paper does not have abstract
+            if not abstract:
+                unreadable += 1
+                counter.next()
+                continue
 
-                # replaces ':::' with newline
-                abstract = abstract.replace('::: ', '\n')
+            # replaces ':::' with newline
+            abstract = abstract.replace('::: ', '\n')
 
-                # segments abstract by sentence
-                doc = self.nlp(abstract)
-                sentences = []
-                is_unreadable = False
+            # segments abstract by sentence
+            doc = self.nlp(abstract)
+            sentences = []
+            is_unreadable = False
 
-                # processes sentence text using mat2vec processor
-                for sent in doc.sents:
-                    try:
-                        tokens, materials = self.processor.process(sent.text)
-                    except OverflowError:
-                        is_unreadable = True
-                        break
+            # processes sentence text using mat2vec processor
+            for sent in doc.sents:
+                try:
+                    tokens, materials = self.processor.process(sent.text)
+                except OverflowError:
+                    is_unreadable = True
+                    break
 
-                    processed_sent = ' '.join(tokens)
-                    sentences.append(processed_sent)
+                processed_sent = ' '.join(tokens)
+                sentences.append(processed_sent)
 
-                # if processor (from above) throws an error, skip the paper
-                if is_unreadable:
-                    unreadable += 1
-                    continue
+            # if processor (from above) throws an error, skip the paper
+            if is_unreadable:
+                unreadable += 1
+                counter.next()
+                continue
 
-                processed_abstract = '\n'.join(sentences)
+            processed_abstract = '\n'.join(sentences)
 
-                # create new document and store new article document if not in collection
-                article = {
-                    'doi': self._get_value(article, 'doi'),
-                    'uid': self._get_value(article, 'pubmed_id'),
-                    'title': self._get_value(article, 'title'),
-                    'abstract': self._get_value(article, 'abstract'),
-                    'url': self._get_value(article, 's2_url'),
-                    'creators': self._get_creators(article),
-                    'publication_name': self._get_value(article, 'journal'),
-                    'issn': None,
-                    'eissn': None,
-                    'publication_date': None,
-                    'year': self._get_value(article, 'year'),
-                    'database': 's2orc',
-                    'processed_abstract': processed_abstract
-                }
-                articles.append(article)
-                abstracts.append(processed_abstract)
+            # create new document and store new article document if not in collection
+            article = {
+                'doi': doi,
+                'uid': uid,
+                'title': self._get_value(article, 'title'),
+                'abstract': abstract,
+                'url': self._get_value(article, 's2_url'),
+                'creators': self._get_creators(article),
+                'publication_name': self._get_value(article, 'journal'),
+                'year': self._get_value(article, 'year'),
+                'database': 's2orc',
+                'processed_abstract': processed_abstract
+            }
+            articles.append(article)
+            abstracts.append(processed_abstract)
+            counter.next()
 
-            return unreadable
-
-        if filename is None:
-            # no filename specified --> gets all data in data folder
-            files = []
-            for file in os.listdir(DATA_PATH):
-                if file.endswith('.jsonl'):
-                    files.append(file)
-
-            for filename in files:
-                unreadable += get_metadata(filename)
-        else:
-            # store data from given file
-            unreadable += get_metadata(filename)
+            # classify abstracts if 20000 have been stored
+            if len(abstracts) == 20000:
+                self._store(articles, abstracts)
+                articles = []
+                abstracts = []
+        counter.finish()
 
         # unreadable papers
+        print(f'No DOI/UID: {no_id}')
         print(f'Unreadable papers: {unreadable}')
 
         # classifies and stores metadata

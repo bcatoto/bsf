@@ -36,7 +36,6 @@ class Scraper:
             unique=True,
             sparse=True
         )
-        self._collection.create_index('title', name='title', unique=True)
         self._collection.create_index('tags', name='tags')
 
     def _get_value(self, data, key):
@@ -62,7 +61,7 @@ class Scraper:
         date_array = date.split('-')
         return datetime.datetime(int(date_array[0]), int(date_array[1]), int(date_array[2]))
 
-    def _save_all(self, articles, doi):
+    def _save_all(self, articles):
         """
         Stores all articles from database query (regardless of classifier result) under general tag
 
@@ -77,11 +76,10 @@ class Scraper:
             # creates document to insert by filtering out fields that are None
             doc = { k:v for k,v in article.items() if v is not None }
 
-            # filters by id if exists, else filters by title
-            id = article['doi'] if doi else article['uid']
-            filter = { 'doi' if doi else 'uid': id }
-            if not id:
-                filter = { 'title': article['title'] }
+            # if uid is null, filters by doi
+            filter = { 'uid': article['uid'] }
+            if not article['uid']:
+                filter = { 'doi': article['doi'] }
 
             # if article is marked as relevant, inserts new document if it
             # does not exist and adds to tag
@@ -99,14 +97,13 @@ class Scraper:
             mongo = self._collection.bulk_write(requests, ordered=False)
             self._gen_new += mongo.upserted_count + mongo.modified_count if mongo else 0
 
-    def _store(self, articles, abstracts, doi=True):
+    def _store(self, articles, abstracts):
         """
         Classifies articles based on processed abstracts and stores in database
         if relevant
 
         :param articles: list of article objects to add to database
         :param abstracts: list of processed abstracts to be checked against classifier
-        :param doi: defaults to True, Bool flag for whether stored IDs are DOIs
         """
         for classifier in self._classifiers:
             classifier.total += len(articles)
@@ -121,11 +118,10 @@ class Scraper:
                     # creates document to insert by filtering out fields that are None
                     doc = { k:v for k,v in article.items() if v is not None }
 
-                    # filters by id if exists, else filters by title
-                    id = article['doi'] if doi else article['uid']
-                    filter = { 'doi' if doi else 'uid': id }
-                    if not id:
-                        filter = { 'title': article['title'] }
+                    # if uid is null, filters by doi
+                    filter = { 'uid': article['uid'] }
+                    if not article['uid']:
+                        filter = { 'doi': article['doi'] }
 
                     # if article is marked as relevant, inserts new document if it
                     # does not exist and adds to tag
@@ -149,4 +145,4 @@ class Scraper:
 
         # if flag is marked True, store all articles from query to database
         if self._save:
-            self._save_all(articles, doi)
+            self._save_all(articles)

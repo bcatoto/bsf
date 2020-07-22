@@ -71,6 +71,7 @@ class PubmedScraper(Scraper):
 
         base = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils'
         retmax = 10000
+        no_id = 0
         unreadable = 0
         abstracts = []
         articles = []
@@ -111,6 +112,14 @@ class PubmedScraper(Scraper):
             entries = soup.find_all('pubmedarticle')
 
             for article in entries:
+                # ignore abstract if doi and uid are null
+                doi = self._get_string(article.find('elocationid', eidtype='doi'))
+                uid = self._get_string(article.find('pmid'))
+                if not doi and not uid:
+                    no_id += 1
+                    bar.next()
+                    continue
+
                 # store abstract text for use by mat2vec below
                 abstract = self._remove_html(article.abstracttext)
 
@@ -145,8 +154,8 @@ class PubmedScraper(Scraper):
                 processed_abstract = '\n'.join(sentences)
 
                 article = {
-                    'doi': self._get_string(article.find('elocationid', eidtype='doi')),
-                    'uid': self._get_string(article.find('pmid')),
+                    'doi': doi,
+                    'uid': uid,
                     'title': self._remove_html(article.articletitle),
                     'abstract': abstract,
                     'creators': self._get_authors(article.find_all('author')),
@@ -170,6 +179,7 @@ class PubmedScraper(Scraper):
         bar.finish()
 
         # unreadable papers
+        print(f'No DOI/UID: {no_id}')
         print(f'Unreadable papers: {unreadable}')
 
         # classifies and stores metadata

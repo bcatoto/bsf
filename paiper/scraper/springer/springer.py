@@ -68,6 +68,7 @@ class SpringerScraper(Scraper):
         articles = []
         abstracts = []
         unreadable = 0
+        no_doi = 0
         item = 0
         total = 100
 
@@ -90,6 +91,13 @@ class SpringerScraper(Scraper):
 
                 # gets metadata
                 for record in records:
+                    # ignore abstract if doi is null
+                    doi = self._get_value(record, 'doi')
+                    if not doi:
+                        no_doi += 1
+                        bar.next()
+                        continue
+
                     # store abstract text for use by mat2vec below
                     abstract = self._get_value(record, 'abstract')
 
@@ -153,6 +161,7 @@ class SpringerScraper(Scraper):
         bar.finish()
 
         # unreadable papers
+        print(f'No DOI: {no_doi}')
         print(f'Unreadable papers: {unreadable}')
 
         # classifies and stores metadata
