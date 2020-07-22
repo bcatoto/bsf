@@ -136,7 +136,7 @@ class SpringerScraper(Scraper):
                         'doi': record.get('doi'),
                         'uid': None,
                         'title': record.get('title'),
-                        'abstract': record.get('abstract'),
+                        'abstract': abstract,
                         'url': self._get_url(record.get('url')),
                         'creators': self._get_creators(record.get('creators')),
                         'publication_name': record.get('publicationName'),
