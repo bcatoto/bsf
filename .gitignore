@@ -5,6 +5,9 @@
 paiper/food2vec/models/*
 paiper/food2vec/wv/*
 
+# Ignores S2ORC data
+paiper/scraper/s2orc/data/*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

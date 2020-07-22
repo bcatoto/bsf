@@ -2,6 +2,7 @@ from paiper.loader import load_articles
 from paiper.classifier import Classifier
 from paiper.scraper.elsevier import ElsevierScraper
 from paiper.scraper.springer import SpringerScraper
+from paiper.scraper.s2orc import S2ORCScraper
 from paiper.scraper.pubmed import PubmedScraper
 from paiper.food2vec import Food2Vec
 import argparse
@@ -31,10 +32,12 @@ def main():
     parser.add_argument('--keywords', type=str, help='opens file of keywords and scrapes for each keyword (specify ending)')
     parser.add_argument('--query', type=str, default='', help='database query (requires quotation marks)')
     parser.add_argument('--subject', type=str, default='', help='Springer Nature subject query (requires quotation marks)')
+    parser.add_argument('--filename', type=str, default='', help='S2ORC filename')
     parser.add_argument('--collection', type=str, default='all', help='collection to store scraped abstracts in')
     parser.add_argument('-o', '--store', action='store_true', help='stores all scraped abstracts in general tag')
     parser.add_argument('-a', '--all', action='store_true', help='scrapes all databases')
     parser.add_argument('-s', '--springer', action='store_true', help='scrapes Springer Nature database')
+    parser.add_argument('-r', '--s2orc', action='store_true', help='scrapes S2ORC data files')
     parser.add_argument('-p', '--pubmed', action='store_true', help='scrapes PubMed database')
     parser.add_argument('-e', '--elsevier', action='store_true', help='scrapes Elsevier database')
     parser.add_argument('-f', '--food2vec', action='store_true', help='initializes word2vec models')
@@ -58,6 +61,7 @@ def main():
     # indicate that all abstracts will be saved
     if args.store:
         print('Store flag was marked. All abstracts scraped in this session will be saved.')
+        print()
 
     # use all scrapers
     if args.all:
@@ -101,6 +105,11 @@ def main():
         if args.elsevier:
             elsevier = ElsevierScraper(classifiers, collection=args.collection, save_all=args.store)
             elsevier.scrape(args.query)
+
+        # S2ORC scraper
+        if args.s2orc:
+            s2orc = S2ORCScraper(classifiers, collection=args.collection, save_all=args.store)
+            s2orc.scrape(filename=args.filename)
 
     # run word2vec
     if args.food2vec:
