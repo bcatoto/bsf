@@ -30,11 +30,8 @@ class Scraper:
         self._gen_total = 0
 
         # create collection indices
-        self._collection.create_index(
-            [('doi', 1), ('uid', 1)],
-            name='ids',
-            unique=True
-        )
+        self._collection.create_index('doi', name='doi', unique=True, sparse=True)
+        self._collection.create_index('uid', name='uid', unique=True, sparse=True)
         self._collection.create_index('tags', name='tags')
         self._collection.create_index('database', name='database')
 
