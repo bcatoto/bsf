@@ -1,2 +1,0 @@
-paiper/food2vec/models/* filter=lfs diff=lfs merge=lfs -text
-paiper/food2vec/wv/* filter=lfs diff=lfs merge=lfs -text
