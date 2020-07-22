@@ -76,15 +76,10 @@ class Scraper:
             # creates document to insert by filtering out fields that are None
             doc = { k:v for k,v in article.items() if v is not None }
 
-            # if uid is null, filters by doi
-            filter = { 'uid': article['uid'] }
-            if not article['uid']:
-                filter = { 'doi': article['doi'] }
-
             # if article is marked as relevant, inserts new document if it
             # does not exist and adds to tag
             requests.append(UpdateOne(
-                filter,
+                { 'doi': article['doi'], 'uid': article['uid'] },
                 {
                     '$setOnInsert': doc,
                     '$addToSet': { 'tags': self._gen_tag }
@@ -117,11 +112,16 @@ class Scraper:
                 if predictions[i]:
                     # creates document to insert by filtering out fields that are None
                     doc = { k:v for k,v in article.items() if v is not None }
+                    doi = article['doi']
+                    uid = article['uid']
 
-                    # if uid is null, filters by doi
-                    filter = { 'uid': article['uid'] }
-                    if not article['uid']:
+                    # sets either doi or uid as only id
+                    if doi:
                         filter = { 'doi': article['doi'] }
+                        del article['uid']
+                    else:
+                        filter = { 'uid': article['uid'] }
+                        del article['doi']
 
                     # if article is marked as relevant, inserts new document if it
                     # does not exist and adds to tag
