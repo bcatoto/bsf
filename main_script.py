@@ -87,7 +87,7 @@ def main():
             if args.pubmed:
                 pubmed.scrape(keyword)
             if args.elsevier:
-                elsevier.scrape(keyword)
+                elsevier.scrape_faster(keyword)
 
     # use query from command line
     else:
@@ -104,7 +104,7 @@ def main():
         # elsevier scraper
         if args.elsevier:
             elsevier = ElsevierScraper(classifiers, collection=args.collection, save_all=args.store)
-            elsevier.scrape(args.query)
+            elsevier.scrape_faster(args.query)
 
         # S2ORC scraper
         if args.s2orc:
