@@ -199,31 +199,55 @@ class Food2Vec:
         filename = os.path.join(WV_PATH, wv_name)
         self._wv = KeyedVectors.load(filename, mmap='r')
 
-    def most_similar(self, term, filter=False, topn=1):
+    def most_similar(self, term, filter=False, vector_math=False, topn=1, closer='', farther=''):
         """
         Returns terms most similar to query
 
         :param term: term to compare similarity to
-        :param filter: defaults to False, bool flag indicating if output should be post-processed
+        :param filter: defaults to False, bool flag for postprocessing via vector distance
+        :param vector_math: defaults to False, bool flag for postprocessing via vector operations
         :param topn: defaults to 1, number of terms returned in order of similarity
+        :param closer: term that results should be more closely related to (required if filter or vector_math is True)
+        :param farther: term that results should be farther from (required if filter or vector_math is True)
         """
         term = '_'.join(self._phraser[term.split(' ')])
 
         # note: could strengthen/reduce importance of other vectors with positive/negative connotation
+
+        print(f'Model: {self.tag}. Term: {term}.')
+
         try:
             similar = self._wv.most_similar(term, topn=topn)
         except KeyError:
             print(f'{term} not in vocabulary')
             print()
             return
-
-        if filter:
-            similar = self._comparison_filter(similar)
-
-        print(f'Model: {self.tag}. Term: {term}.')
+        
+        print('Original results:')
         for result in similar:
             print(f'{result[0]}, {result[1]}')
         print()
+
+        if vector_math:
+            similar_math = self._wv.most_similar(
+                positive=[term, closer],
+                negative=[farther],
+                topn=topn
+            )
+            print('Vector math filter results:')
+            for result in similar_math:
+                print(f'{result[0]}, {result[1]}')
+            print()
+            
+        if filter:
+            similar_filter = self._comparison_filter(similar, closer, farther)
+            if len(similar_filter) == 0:
+                print('No results for comparison filter')
+            else: 
+                print('Comparison filter results:')
+                for result in similar_filter:
+                    print(result)
+            print()
 
     def analogy(self, term, same, opp, filter=False, topn=1):
         """
@@ -247,16 +271,16 @@ class Food2Vec:
             topn=topn
         )
 
-        if filter:
-            analogy = self._comparison_filter(analogy)
-
         print(f'Model: {self.tag}. Term: {term}. Pair: {same} to {opp}.')
         for result in analogy:
             print(f'{result[0]}, {result[1]}')
 
-    def _comparison_filter(self, results):
+    def _comparison_filter(self, results, closer, farther):
         """
-        Filter the results by eliminating those closer to "meat" than to "plant"
+        Filter the results by only including those more related to one term than another
+
+        :param closer: term that is more important (i.e. 'plant')
+        :param farther: term that we want to filter out (i.e. 'meat')
         """
-        processed_results = [x[0] for x in results if self._wv.similarity(x[0],'plant') > self._wv.similarity(x[0],'meat')]
+        processed_results = [(x, y) for x, y in results if self._wv.similarity(x, closer) > self._wv.similarity(x, farther)]
         return processed_results

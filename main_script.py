@@ -113,7 +113,7 @@ def main():
 
     # run word2vec
     if args.food2vec:
-        models = [Food2Vec('dataset1'), Food2Vec('dataset2')]
+        models = [Food2Vec('dataset1')]
         for model in models:
             if args.train:
                 model.train_model(collection_name=args.collection)
@@ -124,11 +124,10 @@ def main():
             # similarity
             if args.similar:
                 model.most_similar(args.similar, topn=5)
-            model.most_similar('flavor compounds', topn=5)
-            model.most_similar('flavor', topn=5)
-            model.most_similar('beef', topn=5)
-            model.most_similar('duck meat', topn=5)
-            model.most_similar('lamb', topn=5)
+            model.most_similar('flavor', filter=True, vector_math=True, closer='plant', farther='animal', topn=10)
+            model.most_similar('beef', filter=True, vector_math=True, closer='plant', farther='animal', topn=10)
+            model.most_similar('duck meat', filter=True, vector_math=True, closer='plant', farther='animal', topn=10)
+            model.most_similar('lamb', filter=True, vector_math=True, closer='plant', farther='animal', topn=10)
 
             # analogy
             model.analogy('pig', 'cow', 'beef')
