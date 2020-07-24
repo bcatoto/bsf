@@ -32,6 +32,7 @@ class Scraper:
         # create collection indices
         self._collection.create_index('doi', name='doi', unique=True, sparse=True)
         self._collection.create_index('uid', name='uid', unique=True, sparse=True)
+        self._collection.create_index('pmc', name='pmc', unique=True, sparse=True)
         self._collection.create_index('tags', name='tags')
         self._collection.create_index('database', name='database')
 
@@ -60,16 +61,25 @@ class Scraper:
         for article in articles:
             # creates document to insert by filtering out fields that are None
             doc = { k:v for k,v in article.items() if v is not None }
+            doi = doc.get('doi')
+            uid = doc.get('uid')
+            pmc = doc.get('pmc')
 
-            # sets either doi or uid as the only id
-            # preference is for doi
+            # sets either doi, uid, or pmc as the only id in that
+            # preference order
             if doi:
                 filter = { 'doi': doi }
                 doc.pop('uid', None)
+                doc.pop('pmc', None)
 
-            else:
+            elif uid:
                 filter = { 'uid': uid }
                 doc.pop('doi', None)
+                doc.pop('pmc', None)
+            else:
+                filter = { 'pmc': pmc }
+                doc.pop('doi', None)
+                doc.pop('uid', None)
 
             # if article is marked as relevant, inserts new document if it
             # does not exist and adds to tag
@@ -109,16 +119,22 @@ class Scraper:
                     doc = { k:v for k,v in article.items() if v is not None }
                     doi = doc.get('doi')
                     uid = doc.get('uid')
+                    pmc = doc.get('pmc')
 
-                    # sets either doi or uid as the only id
-                    # preference is for doi
+                    # sets either doi, uid, or pmc as the only id in that
+                    # preference order
                     if doi:
                         filter = { 'doi': doi }
                         doc.pop('uid', None)
-
-                    else:
+                        doc.pop('pmc', None)
+                    elif uid:
                         filter = { 'uid': uid }
                         doc.pop('doi', None)
+                        doc.pop('pmc', None)
+                    else:
+                        filter = { 'pmc': pmc }
+                        doc.pop('doi', None)
+                        doc.pop('uid', None)
 
                     # if article is marked as relevant, inserts new document if it
                     # does not exist and adds to tag

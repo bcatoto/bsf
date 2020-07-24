@@ -27,7 +27,7 @@ class S2ORCScraper(Scraper):
 
         :param filename: name of file in data folder to scrape from
         """
-        print(f'Collection: {self._collection.database.name}.{self._collection.name}. Database: S2ORC.')
+        print(f'Collection: {self._collection.database.name}.{self._collection.name}. Database: S2ORC. File: {filename}')
 
         abstracts = []
         articles = []
@@ -41,10 +41,10 @@ class S2ORCScraper(Scraper):
         for data in file:
             article = json.loads(data)
 
-            # ignore abstract if doi and uid are null
-            doi = article.get('doi')
+            # ignore abstract if article is not from PubMed or PubMedCentral
             uid = article.get('pubmed_id')
-            if not doi and not uid:
+            pmc = article.get('pmc_id')
+            if not uid and not pmc:
                 no_id += 1
                 counter.next()
                 continue
@@ -87,8 +87,9 @@ class S2ORCScraper(Scraper):
 
             # create new document and store new article document if not in collection
             article = {
-                'doi': doi,
+                'doi': article.get('doi'),
                 'uid': uid,
+                'pmc': pmc,
                 'title': article.get('title'),
                 'abstract': abstract,
                 'url': article.get('s2_url'),
@@ -110,7 +111,7 @@ class S2ORCScraper(Scraper):
         counter.finish()
 
         # unreadable papers
-        print(f'No DOI/UID: {no_id}')
+        print(f'No UID/PMC ID: {no_id}')
         print(f'Unreadable papers: {unreadable}')
 
         # classifies and stores metadata

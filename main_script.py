@@ -9,6 +9,7 @@ import argparse
 import os
 
 KEYWORDS_PATH = os.path.join(os.path.dirname(__file__), 'paiper/scraper/keywords')
+DATA_PATH = os.path.join(os.path.dirname(__file__), 'paiper/scraper/s2orc/data')
 
 """
 Using the scraper:
@@ -32,7 +33,7 @@ def main():
     parser.add_argument('--keywords', type=str, help='opens file of keywords and scrapes for each keyword (specify ending)')
     parser.add_argument('--query', type=str, default='', help='database query (requires quotation marks)')
     parser.add_argument('--subject', type=str, default='', help='Springer Nature subject query (requires quotation marks)')
-    parser.add_argument('--filename', type=str, default='', help='S2ORC filename')
+    parser.add_argument('--filename', type=str, help='S2ORC filename')
     parser.add_argument('--collection', type=str, default='all', help='collection to store scraped abstracts in')
     parser.add_argument('-o', '--store', action='store_true', help='stores all scraped abstracts in general tag')
     parser.add_argument('-a', '--all', action='store_true', help='scrapes all databases')
@@ -109,7 +110,21 @@ def main():
         # S2ORC scraper
         if args.s2orc:
             s2orc = S2ORCScraper(classifiers, collection=args.collection, save_all=args.store)
-            s2orc.scrape(args.filename)
+
+            # stores data from given
+            if args.filename:
+                s2orc.scrape(args.filename)
+            # else stores data from all files in data folder
+            else:
+                print('Getting files...')
+                files = []
+                for file in os.listdir(DATA_PATH):
+                    if file.endswith('.jsonl'):
+                        files.append(file)
+
+                for filename in files:
+                    s2orc.scrape(filename)
+
 
     # run word2vec
     if args.food2vec:
