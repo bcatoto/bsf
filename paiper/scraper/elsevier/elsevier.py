@@ -123,8 +123,8 @@ class ElsevierScraper(Scraper):
                     abstracts.append(processed_abstract)
                     bar.next()
             
-            # sets url to next page in search
-            url = data['link'][-2]['@href']
+                # sets url to next page in search
+                url = data['link'][-2]['@href']
             
             # json file has 25 items per page, so go to the next page
             item += 25
