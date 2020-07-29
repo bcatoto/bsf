@@ -101,6 +101,7 @@ class Food2Vec:
         # queries relevant collection of MongoDB database
         print('Getting articles...')
         collection = MongoClient(DATABASE_URL)[database_name][collection_name]
+        print('got collection')
         articles = list(collection.find(
             { 'tags': self.tag },
             { 'processed_abstract' : 1, '_id': 0 }
@@ -222,7 +223,7 @@ class Food2Vec:
             print(f'{term} not in vocabulary')
             print()
             return
-        
+
         print('Original results:')
         for result in similar:
             print(f'{result[0]}, {result[1]}')
@@ -238,12 +239,12 @@ class Food2Vec:
             for result in similar_math:
                 print(f'{result[0]}, {result[1]}')
             print()
-            
+
         if filter:
             similar_filter = self._comparison_filter(similar, closer, farther)
             if len(similar_filter) == 0:
                 print('No results for comparison filter')
-            else: 
+            else:
                 print('Comparison filter results:')
                 for result in similar_filter:
                     print(result)
