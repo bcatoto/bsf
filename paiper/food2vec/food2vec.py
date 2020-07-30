@@ -199,7 +199,7 @@ class Food2Vec:
         filename = os.path.join(WV_PATH, wv_name)
         self._wv = KeyedVectors.load(filename, mmap='r')
 
-    def most_similar(self, term, filter=False, vector_math=False, topn=1, closer='', farther=''):
+    def most_similar(self, term, filter=False, vector_math=False, topn=1, closer='', farther='', stdout=True):
         """
         Returns terms most similar to query
 
@@ -209,12 +209,13 @@ class Food2Vec:
         :param topn: defaults to 1, number of terms returned in order of similarity
         :param closer: term that results should be more closely related to (required if filter or vector_math is True)
         :param farther: term that results should be farther from (required if filter or vector_math is True)
+        :param stdout: defaults to True, bool flag to indicate printing results
         """
         term = '_'.join(self._phraser[term.split(' ')])
 
         # note: could strengthen/reduce importance of other vectors with positive/negative connotation
-
-        print(f'Model: {self.tag}. Term: {term}.')
+        if stdout:
+            print(f'Model: {self.tag}. Term: {term}.')
 
         try:
             similar = self._wv.most_similar(term, topn=topn)
@@ -222,11 +223,12 @@ class Food2Vec:
             print(f'{term} not in vocabulary')
             print()
             return
-        
-        print('Original results:')
-        for result in similar:
-            print(f'{result[0]}, {result[1]}')
-        print()
+
+        if stdout:
+            print('Original results:')
+            for result in similar:
+                print(f'{result[0]}, {result[1]}')
+            print()
 
         if vector_math:
             similar_math = self._wv.most_similar(
@@ -234,22 +236,29 @@ class Food2Vec:
                 negative=[farther],
                 topn=topn
             )
-            print('Vector math filter results:')
-            for result in similar_math:
-                print(f'{result[0]}, {result[1]}')
-            print()
-            
+
+            if stdout:
+                print('Vector math filter results:')
+                for result in similar_math:
+                    print(f'{result[0]}, {result[1]}')
+                print()
+
+
         if filter:
             similar_filter = self._comparison_filter(similar, closer, farther)
-            if len(similar_filter) == 0:
-                print('No results for comparison filter')
-            else: 
-                print('Comparison filter results:')
-                for result in similar_filter:
-                    print(result)
-            print()
 
-    def analogy(self, term, same, opp, filter=False, topn=1):
+            if stdout:
+                if len(similar_filter) == 0:
+                    print('No results for comparison filter')
+                else:
+                    print('Comparison filter results:')
+                    for result in similar_filter:
+                        print(result)
+                print()
+
+        return similar
+
+    def analogy(self, term, same, opp, filter=False, topn=1, stdout=True):
         """
         Returns terms analogy based on given pair analogy
         Format: same is to opp as term is to analogy()
@@ -260,6 +269,7 @@ class Food2Vec:
         :param opp: term in given pair analogy that analogy is looking for
         :param filter: defaults to False, bool flag indicating if output should be post-processed
         :param topn: defaults to 1, number of terms returned in order of similarity
+        :param stdout: defaults to True, bool flag to indicate printing results
         """
         term = '_'.join(self._phraser[term.split(' ')])
         same = '_'.join(self._phraser[same.split(' ')])
@@ -271,9 +281,12 @@ class Food2Vec:
             topn=topn
         )
 
-        print(f'Model: {self.tag}. Term: {term}. Pair: {same} to {opp}.')
-        for result in analogy:
-            print(f'{result[0]}, {result[1]}')
+        if stdout:
+            print(f'Model: {self.tag}. Term: {term}. Pair: {same} to {opp}.')
+            for result in analogy:
+                print(f'{result[0]}, {result[1]}')
+
+        return analogy
 
     def _comparison_filter(self, results, closer, farther):
         """
