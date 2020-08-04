@@ -14,7 +14,7 @@ cryptography==3.0
 cssselect==1.1.0
 cycler==0.10.0
 cymem==2.0.3
-dataclasses==0.7
+dataclasses==0.6
 DAWG==0.8.0
 decorator==4.4.2
 dnspython==2.0.0
