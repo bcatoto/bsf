@@ -38,13 +38,21 @@ class S2ORCScraper(Scraper):
         counter = Counter(message='Articles analyzed: ')
 
         file = open(os.path.join(DATA_PATH, filename), 'r')
+
+        # load GB to US dictionary
+        with open('miscellaneous/us_gb_dict.txt', 'r') as convert:
+            spelling = json.load(convert)
+        print('Stored json dictionary in memory')
+
         for data in file:
             article = json.loads(data)
 
             # ignore abstract if article is not from PubMed or PubMedCentral
             uid = article.get('pubmed_id')
             pmc = article.get('pmc_id')
-            if not uid and not pmc:
+            doi = article.get('doi')
+            paperid = article.get('paper_id')
+            if not uid and not pmc and not doi and not paperid:
                 no_id += 1
                 counter.next()
                 continue
@@ -73,8 +81,11 @@ class S2ORCScraper(Scraper):
                 except OverflowError:
                     is_unreadable = True
                     break
-
-                processed_sent = ' '.join(tokens)
+                
+                processed_sent = ' '.join([token.lemma_ for token in sent if not token.is_stop])
+                for gb, us in spelling.items():
+                    processed_sent = processed_sent.replace(gb, us)
+                # processed_sent = ' '.join(tokens)
                 sentences.append(processed_sent)
 
             # if processor (from above) throws an error, skip the paper
@@ -87,9 +98,10 @@ class S2ORCScraper(Scraper):
 
             # create new document and store new article document if not in collection
             article = {
-                'doi': article.get('doi'),
+                'doi': doi,
                 'uid': uid,
                 'pmc': pmc,
+                'paperid': paperid,
                 'title': article.get('title'),
                 'abstract': abstract,
                 'url': article.get('s2_url'),
@@ -111,7 +123,7 @@ class S2ORCScraper(Scraper):
         counter.finish()
 
         # unreadable papers
-        print(f'No UID/PMC ID: {no_id}')
+        print(f'No ID: {no_id}')
         print(f'Unreadable papers: {unreadable}')
 
         # classifies and stores metadata
