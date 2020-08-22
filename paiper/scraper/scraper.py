@@ -8,7 +8,7 @@ import os
 DATABASE_URL = os.environ.get('DATABASE_URL', 'Database url doesn\'t exist')
 
 class Scraper:
-    nlp = spacy.load('en_core_web_sm')
+    nlp = spacy.load('en_core_web_sm',  disable=['tagger', 'ner'])
     processor = MaterialsTextProcessor()
 
     def __init__(self, classifiers, database='abstracts', collection='all', save_all=False, gen_tag='food science'):
@@ -119,6 +119,7 @@ class Scraper:
                     doi = doc.get('doi')
                     uid = doc.get('uid')
                     pmc = doc.get('pmc')
+                    paperid = doc.get('paperid') # unique s2orc paper id
 
                     # sets either doi, uid, or pmc as the only id in that
                     # preference order
@@ -126,14 +127,22 @@ class Scraper:
                         filter = { 'doi': doi }
                         doc.pop('uid', None)
                         doc.pop('pmc', None)
+                        doc.pop('paperid', None)
                     elif uid:
                         filter = { 'uid': uid }
                         doc.pop('doi', None)
                         doc.pop('pmc', None)
-                    else:
+                        doc.pop('paperid', None)
+                    elif pmc:
                         filter = { 'pmc': pmc }
                         doc.pop('doi', None)
                         doc.pop('uid', None)
+                        doc.pop('paperid', None)
+                    else:
+                        filter = { 'paperid': paperid }
+                        doc.pop('doi', None)
+                        doc.pop('uid', None)
+                        doc.pop('pmc', None)
 
                     # if article is marked as relevant, inserts new document if it
                     # does not exist and adds to tag
