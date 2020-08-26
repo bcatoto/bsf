@@ -219,6 +219,7 @@ class Food2Vec:
 
         try:
             similar = self._wv.most_similar(term, topn=topn)
+            similar2 = self._wv.most_similar(positive=[term], topn=topn)
         except KeyError:
             print(f'{term} not in vocabulary')
             print()
@@ -228,6 +229,10 @@ class Food2Vec:
             print('Original results:')
             for result in similar:
                 print(f'{result[0]}, {result[1]}')
+            print('Test results:')
+            for result in similar2:
+                print(f'{result[0]}, {result[1]}')
+
             print()
 
         if vector_math:

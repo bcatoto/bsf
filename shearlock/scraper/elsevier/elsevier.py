@@ -1,4 +1,4 @@
-from paiper.scraper import Scraper
+from shearlock.scraper import Scraper
 from progress.bar import ChargingBar
 import requests
 import json
