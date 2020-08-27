@@ -1,7 +1,8 @@
 # Black Sheep Foods: Shearlock
 ## About
 Contributors: Bianca Catoto, Rohan Jinturkar, Noah Schochet
-This repository contains all scripts for the Shearlock project. Feel free to check out our website [here](shearlock.blacksheepfoods.com). The trained models are not on this repository due to file size limits, but is available upon request.
+
+This repository contains all scripts for the Shearlock project. Feel free to check out our website [here](http://shearlock.blacksheepfoods.com). The trained models are not on this repository due to file size limits, but is available upon request.
 
 Shearlock aims to simplify the R&D process by generating textual insights from a model trained on over 3.5 million scientific abstracts. In particular, this tool may prove useful for uncovering contextually similar/relevant terms (what are the most similar terms to "hemoglobin"), as well as solving analogies ("cow is to beef as pig is to _____").
 
