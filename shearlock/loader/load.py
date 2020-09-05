@@ -1,6 +1,6 @@
 from pymongo import MongoClient, UpdateOne
 from progress.bar import ChargingBar
-from paiper.processor import MaterialsTextProcessor
+from shearlock.processor import MaterialsTextProcessor
 import json
 import os
 

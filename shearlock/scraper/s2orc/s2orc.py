@@ -1,4 +1,4 @@
-from paiper.scraper import Scraper
+from shearlock.scraper import Scraper
 from progress.counter import Counter
 import json
 import os

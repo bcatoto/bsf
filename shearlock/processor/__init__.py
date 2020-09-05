@@ -1,0 +1,1 @@
+from shearlock.processor.process import MaterialsTextProcessor

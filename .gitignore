@@ -3,11 +3,11 @@
 .vscode
 
 # Ignores models
-paiper/food2vec/models/*
-paiper/food2vec/wv/*
+shearlock/food2vec/models/*
+shearlock/food2vec/wv/*
 
 # Ignores S2ORC data
-paiper/scraper/s2orc/data/*
+shearlock/scraper/s2orc/data/*
 
 # NODE
 

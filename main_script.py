@@ -1,15 +1,15 @@
-from paiper.loader import load_articles
-from paiper.classifier import Classifier
-from paiper.scraper.elsevier import ElsevierScraper
-from paiper.scraper.springer import SpringerScraper
-from paiper.scraper.s2orc import S2ORCScraper
-from paiper.scraper.pubmed import PubmedScraper
-from paiper.food2vec import Food2Vec
+from shearlock.loader import load_articles
+from shearlock.classifier import Classifier
+from shearlock.scraper.elsevier import ElsevierScraper
+from shearlock.scraper.springer import SpringerScraper
+from shearlock.scraper.s2orc import S2ORCScraper
+from shearlock.scraper.pubmed import PubmedScraper
+from shearlock.food2vec import Food2Vec
 import argparse
 import os
 
-KEYWORDS_PATH = os.path.join(os.path.dirname(__file__), 'paiper/scraper/keywords')
-DATA_PATH = os.path.join(os.path.dirname(__file__), 'paiper/scraper/s2orc/data')
+KEYWORDS_PATH = os.path.join(os.path.dirname(__file__), 'shearlock/scraper/keywords')
+DATA_PATH = os.path.join(os.path.dirname(__file__), 'shearlock/scraper/s2orc/data')
 
 """
 Using the scraper:
@@ -51,7 +51,7 @@ def main():
         load_articles()
 
     # classifier
-    classifiers = [Classifier('dataset1'), Classifier('dataset2')]
+    classifiers = [Classifier('biology'), Classifier('medicine')]
     for classifier in classifiers:
         if args.classifier:
             classifier.train_model()
@@ -121,7 +121,7 @@ def main():
                 for file in os.listdir(DATA_PATH):
                     if file.endswith('.jsonl'):
                         files.append(file)
-
+                
                 for filename in files:
                     s2orc.scrape(filename)
 
