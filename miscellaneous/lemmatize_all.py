@@ -34,7 +34,7 @@ cleaned_abstracts = []
 nlp = spacy.load("en_core_web_sm", disable=['tagger', 'parser', 'ner'])
 
 # load GB to US dictionary
-with open('us_gb_dict.txt', 'r') as convert:
+with open('miscellaneous/us_gb_dict.txt', 'r') as convert:
     spelling = json.load(convert)
 print('Stored json dictionary in memory')
 

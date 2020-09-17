@@ -85,7 +85,6 @@ class S2ORCScraper(Scraper):
                 processed_sent = ' '.join([token.lemma_ for token in sent if not token.is_stop])
                 for gb, us in spelling.items():
                     processed_sent = processed_sent.replace(gb, us)
-                # processed_sent = ' '.join(tokens)
                 sentences.append(processed_sent)
 
             # if processor (from above) throws an error, skip the paper
