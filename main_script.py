@@ -54,10 +54,9 @@ def main():
     classifiers = [Classifier('biology'), Classifier('medicine')]
     for classifier in classifiers:
         if args.classifier:
-            classifier.train_model()
+            classifier.train()
         else:
-            classifier.load_vectorizer()
-            classifier.load_model()
+            classifier.load()
 
     # indicate that all abstracts will be saved
     if args.store:

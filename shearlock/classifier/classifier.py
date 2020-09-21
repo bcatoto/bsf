@@ -22,7 +22,7 @@ class Classifier:
         self.tag = tag
         self.reset_metrics()
 
-    def train_model(self, database_name='classifier', collection_name=None, vectorizer_name=None, model_name=None, training_size=0.8, random_state=5):
+    def train(self, database_name='classifier', collection_name=None, vectorizer_name=None, model_name=None, training_size=0.8, random_state=5):
         """
         Trains Classifier based on set of relevant and irrelevant article abstracts
         Features: preprocessed abstracts (in vector form)
@@ -89,32 +89,26 @@ class Classifier:
         self._vectorizer = vectorizer
         self._model = model
 
-    def load_vectorizer(self, vectorizer_name=None):
+    def load(self, vectorizer_name=None, model_name=None):
         """
         Loads vectorizer from vectorizers folder
-
-        :param vectorizer_name: defaults to tag, the name of vectorizer file to load
+        Loads model from models folder
+        :param vectorizer_name: defaults to tag, name of vectorizer file to load
+        :param model_name: defaults to tag, name of model file to load
         """
         # initializes optional arguments to tag
         if vectorizer_name is None:
             vectorizer_name = self.tag
+        
+        if model_name is None:
+            model_name = self.tag
 
         # loads vectorizer
         filename = os.path.join(VECTORIZERS_PATH, f'{vectorizer_name}.pkl')
         with open(filename, 'rb') as file:
             self._vectorizer = pickle.load(file)
-
-    def load_model(self, model_name=None):
-        """
-        Loads model from models folder
-
-        :param model_name: defaults to tag, the name of model file to load
-        """
-        # initializes optional arguments to tag
-        if model_name is None:
-            model_name = self.tag
-
-        # loads vectorizer
+        
+        # loads model
         filename = os.path.join(MODELS_PATH, f'{model_name}.pkl')
         with open(filename, 'rb') as file:
             self._model = pickle.load(file)
@@ -126,6 +120,9 @@ class Classifier:
         :param abstracts: article abstracts to be classified as relevant or irrelevant
         based on model of Classifier
         """
+
+        # TODO: add validation to ensure model was loaded before prediction
+
         features = self._vectorizer.transform(abstracts)
         return self._model.predict(features)
 
