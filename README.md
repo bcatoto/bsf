@@ -1,12 +1,14 @@
 # Black Sheep Foods: Shearlock
 ## About
-Contributors: Bianca Catoto, Rohan Jinturkar, Noah Schochet
+Contributors: [Bianca Catoto](http://www.github.com/bcatoto), [Rohan Jinturkar](http://www.github.com/rjintu), [Noah Schochet](http://www.github.com/noahschochet)
 
-This repository contains all scripts for the Shearlock project. Feel free to check out our website [here](http://shearlock.blacksheepfoods.com). The trained models are not on this repository due to file size limits, but is available upon request.
+This repository contains all scripts for the Shearlock project. Feel free to check out our website by [clicking here](http://shearlock.blacksheepfoods.com). The corresponding Github for the website front end can be found by [clicking here](http://www.github.com/rjintu/bsf-aws). Due to file size limits, the trained models are not in this repository, but they are available upon request.
 
 Shearlock aims to simplify the R&D process by generating textual insights from a model trained on over 3.5 million scientific abstracts. In particular, this tool may prove useful for uncovering contextually similar/relevant terms (what are the most similar terms to "hemoglobin"), as well as solving analogies ("cow is to beef as pig is to _____").
 
-The information below explains how you can set up the processing pipeline to build a database of articles on any field, train a Word2Vec model, and generate useful insights. We'd love to hear your thoughts at `developers@blacksheepfoods.com`.
+The information below explains how you can set up the processing pipeline to build your own database of articles on any field, train a Word2Vec model, and generate useful insights. The pipeline described below enables you to train and test your own models, applying the same processes that we employed for Shearlock.
+
+We'd love to hear your thoughts at `developers@blacksheepfoods.com`.
 
 ## Set Up
 1. Fork this repository to your computer
@@ -127,8 +129,9 @@ Both `most_similar()` and `analogy()` will automatically be called whenever main
 
 
 ### For collaborators
-If packages have been changed upstream, you can update your local environment with `pipenv sync` and `pipenv clean`.
+We encourage anyone to contribute to the Shearlock project! We request that you follow the existing styles if you are contributing new code.
 
+If packages have been changed upstream, you can update your local environment with `pipenv sync` and `pipenv clean`.
 
 If you experience issues with finding the location of your virtual environment, you can use `pipenv --py` to access its path and use it directly in code editors like VSCode and Atom.
 
@@ -141,7 +144,7 @@ pipenv install
 ```
 
 ## Acknowledgements
-Many thanks to Sunny Kumar of Black Sheep Foods for his continued support and guidance.
+Many thanks to Sunny Kumar, Lauren Whatley, and the rest of the Black Sheep Foods team for their support and guidance.
 
 This project was inspired by the work of Tshitoyan et al. in [Unsupervised word embeddings capture latent knowledge from materials science literature](https://github.com/materialsintelligence/mat2vec). We utilized their processor `process.py` on the paper abstracts to improve the classifier's accuracy. Our preprocessing pipeline was also designed based on their suggestions.
 

@@ -9,6 +9,8 @@ ENDPOINT_NAME = os.environ['ENDPOINT_NAME']
 runtime= boto3.client('runtime.sagemaker')
 
 def lambda_handler(event, context):
+
+    # preprocessing
     term = event['term'].lower().replace(' ', '_')
     
     query = {}
@@ -24,12 +26,15 @@ def lambda_handler(event, context):
             query['negative'].append(term)
     
     payload = json.dumps(query).encode('utf-8')
+
+    # query AWS SageMaker endpoint 
     response = runtime.invoke_endpoint(EndpointName=ENDPOINT_NAME,
                                        ContentType='application/json',
                                        Body=payload)
                                        
     results = json.loads(response['Body'].read().decode())
     
+    # postprocessing
     results['query'] = event['term']
     for vector in event['vectors']:
         if vector['positive']:
