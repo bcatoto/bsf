@@ -1,1 +1,1 @@
-from shearlock.loader.load import load_articles
+from shearlock.loader.loader import load_articles

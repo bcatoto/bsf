@@ -2,7 +2,7 @@
 ## About
 Contributors: [Bianca Catoto](http://www.github.com/bcatoto), [Rohan Jinturkar](http://www.github.com/rjintu), [Noah Schochet](http://www.github.com/noahschochet)
 
-This repository contains all scripts for the Shearlock project. Feel free to check out our website by [clicking here](http://shearlock.blacksheepfoods.com). The corresponding Github for the website front end can be found by [clicking here](http://www.github.com/rjintu/bsf-aws). Due to file size limits, the trained models are not in this repository, but they are available upon request.
+This repository contains all scripts for the Shearlock project. You can experiment with them on our website by [clicking here](http://shearlock.blacksheepfoods.com). The corresponding Github for the front end can be found by [clicking here](http://www.github.com/rjintu/bsf-aws). Due to storage limits, the trained models are not in this repository, but they are available upon request.
 
 Shearlock aims to simplify the R&D process by generating textual insights from a model trained on over 3.5 million scientific abstracts. In particular, this tool may prove useful for uncovering contextually similar/relevant terms (what are the most similar terms to "hemoglobin"), as well as solving analogies ("cow is to beef as pig is to _____").
 
