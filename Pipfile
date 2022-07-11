@@ -19,6 +19,7 @@ monty = "*"
 progress = "*"
 spacy = "*"
 scikit-learn = "==0.23.1"
+pytest = "*"
 
 [requires]
 python_version = "3.6"

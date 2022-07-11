@@ -24,7 +24,7 @@ def load_articles(database_name='classifier', filename=None, lemmatize=True):
     # gets and stores all articles from given file
     def get_file_articles(filename):
         # gets data from file
-        file = open(os.path.join(ARTICLE_PATH, filename), 'r')
+        file = open(os.path.join(ARTICLE_PATH, filename), 'r',encoding='UTF8')
         data = json.load(file)
         articles = data['articles']
 

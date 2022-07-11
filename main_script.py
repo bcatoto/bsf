@@ -51,7 +51,7 @@ def main():
         load_articles()
 
     # classifier
-    classifiers = [Classifier('biology'), Classifier('medicine')]
+    classifiers = [Classifier('dataset2'), Classifier('dataset1')]
     for classifier in classifiers:
         if args.classifier:
             classifier.train()
