@@ -74,7 +74,7 @@ class Food2Vec:
             else:
                 return grams[sent], grams
 
-    def train_model(self, database_name='abstracts', collection_name='all', phraser_name=None, model_name=None, wv_name=None, depth=2, min_count=10, threshold=15.0):
+    def train_model(self, database_name='abstracts', collection_name='keywords2_dataset2', phraser_name=None, model_name=None, wv_name=None, depth=2, min_count=10, threshold=15.0):
         """
         Trains word2vec model based on dataset of tag
 
@@ -95,6 +95,8 @@ class Food2Vec:
             phraser_name = self.tag
         if model_name is None:
             model_name = self.tag
+        if wv_name is None:
+            wv_name = self.tag
 
         print(f'Collection: {database_name}.{collection_name}.')
 

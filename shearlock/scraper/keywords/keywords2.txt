@@ -4,3 +4,4 @@ protein
 proteins
 amino acids
 flavor profile
+fatty acids

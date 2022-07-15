@@ -51,7 +51,7 @@ def main():
         load_articles()
 
     # classifier
-    classifiers = [Classifier('dataset2'), Classifier('dataset1')]
+    classifiers = [Classifier('dataset2')]
     for classifier in classifiers:
         if args.classifier:
             classifier.train()
@@ -127,7 +127,7 @@ def main():
 
     # run word2vec
     if args.food2vec:
-        models = [Food2Vec('dataset1')]
+        models = [Food2Vec('dataset2')]
         for model in models:
             if args.train:
                 model.train_model(collection_name=args.collection)
@@ -147,7 +147,7 @@ def main():
             model.analogy('pig', 'cow', 'beef')
             model.analogy('chicken', 'cow', 'beef')
             model.analogy('chicken', 'pig', 'pork')
-            model.analogy('soy', 'beef', 'hemoglobin')
+            model.analogy('duck', 'cow', 'beef')
             print()
 
 if __name__ == '__main__':

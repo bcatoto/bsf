@@ -133,6 +133,7 @@ class SpringerScraper(Scraper):
 
                     # create new document and store new article document if not in collection
                     article = {
+                        'keyword': keyword,
                         'doi': record.get('doi'),
                         'uid': None,
                         'title': record.get('title'),
